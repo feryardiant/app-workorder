@@ -6,6 +6,15 @@
         }
     },
     "languages": {
+        "Blade": {
+            "document_symbols": "on",
+            "language_servers": ["laravel", "!phpantom", "!intelephense", "!phptools", "!phpactor", "..."],
+            "semantic_tokens": "combined"
+        },
+        "PHP": {
+            "document_symbols": "on",
+            "language_servers": ["laravel", "!intelephense", "phpantom", "!phptools", "!phpactor", "..."]
+        },
         "CSS": {
             "language_servers": ["tailwindcss-intellisense-css", "!vscode-css-language-server", "..."],
             "format_on_save": "on",
