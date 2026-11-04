@@ -9,6 +9,8 @@ use App\Enums\Role;
 use App\Livewire\Actions\Logout;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 
 class DeleteUserForm extends Component
@@ -29,13 +31,20 @@ class DeleteUserForm extends Component
         /** @var User $user */
         $user = Auth::user();
 
-        if ($user->role->isOwner() && User::query()->where('role', Role::Owner)->count() === 1) {
-            $this->addError('password', __('The last owner cannot delete their account.'));
+        DB::transaction(function () use ($user, $logout): void {
+            $ownerIds = User::query()
+                ->where('role', Role::Owner)
+                ->lockForUpdate()
+                ->pluck('id');
 
-            return;
-        }
+            if ($user->role->isOwner() && $ownerIds->count() === 1) {
+                throw ValidationException::withMessages([
+                    'password' => __('The last owner cannot delete their account.'),
+                ]);
+            }
 
-        tap($user, $logout(...))->delete();
+            tap($user, $logout(...))->delete();
+        });
 
         $this->redirect('/', navigate: true);
     }
