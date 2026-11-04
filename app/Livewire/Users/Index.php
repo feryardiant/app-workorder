@@ -24,6 +24,10 @@ class Index extends Component
 
     public bool $showCreateModal = false;
 
+    public bool $showDeleteModal = false;
+
+    public ?int $deletingUserId = null;
+
     public string $name = '';
 
     public string $email = '';
@@ -63,6 +67,23 @@ class Index extends Component
         Flux::toast(variant: 'success', text: __('User created. A verification email has been sent.'));
     }
 
+    public function confirmDelete(User $user): void
+    {
+        $this->deletingUserId = $user->id;
+        $this->showDeleteModal = true;
+    }
+
+    public function deleteConfirmed(): void
+    {
+        $user = $this->deletingUser();
+
+        abort_if($user === null, 404);
+
+        $this->deleteUser($user);
+
+        $this->reset('showDeleteModal', 'deletingUserId');
+    }
+
     public function deleteUser(User $user): void
     {
         $actor = auth()->user();
@@ -87,6 +108,14 @@ class Index extends Component
         return $actor instanceof User && $actor->role->isOwner()
             ? Role::cases()
             : [Role::Admin, Role::Member];
+    }
+
+    #[Computed]
+    public function deletingUser(): ?User
+    {
+        return $this->deletingUserId === null
+            ? null
+            : User::find($this->deletingUserId);
     }
 
     public function render(): View

@@ -91,6 +91,34 @@ test('the current user cannot be removed', function () {
     expect($current->fresh())->not->toBeNull();
 });
 
+test('the delete confirmation modal removes the user', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $user = User::factory()->create();
+
+    Livewire::test(Index::class)
+        ->call('confirmDelete', $user->id)
+        ->assertSet('showDeleteModal', true)
+        ->assertSet('deletingUserId', $user->id)
+        ->call('deleteConfirmed')
+        ->assertHasNoErrors()
+        ->assertSet('showDeleteModal', false)
+        ->assertSet('deletingUserId', null);
+
+    expect($user->fresh())->toBeNull();
+});
+
+test('a member cannot remove a user through the confirmation modal', function () {
+    actingAs(User::factory()->withRole(Role::Member)->create());
+    $user = User::factory()->create();
+
+    Livewire::test(Index::class)
+        ->call('confirmDelete', $user->id)
+        ->call('deleteConfirmed')
+        ->assertForbidden();
+
+    expect($user->fresh())->not->toBeNull();
+});
+
 test('a member cannot edit or remove users', function () {
     actingAs(User::factory()->withRole(Role::Member)->create());
     $user = User::factory()->create();

@@ -62,8 +62,7 @@
                                     <flux:menu.item
                                         variant="danger"
                                         icon="trash"
-                                        wire:click="deleteUser({{ $user->id }})"
-                                        wire:confirm="{{ __('Remove :name? This cannot be undone.', ['name' => $user->name]) }}"
+                                        wire:click="confirmDelete({{ $user->id }})"
                                     >
                                         {{ __('Remove User') }}
                                     </flux:menu.item>
@@ -115,5 +114,30 @@
                 <flux:button variant="primary" type="submit">{{ __('Add') }}</flux:button>
             </div>
         </form>
+    </flux:modal>
+
+    <flux:modal
+        wire:model.self="showDeleteModal"
+        class="md:w-96"
+        x-init="$el.querySelector('dialog')?.setAttribute('aria-labelledby', 'delete-user-heading')"
+    >
+        <div class="space-y-6">
+            <div>
+                <flux:heading id="delete-user-heading" size="lg">{{ __('Remove user') }}</flux:heading>
+                <flux:subheading>
+                    {{ __('Remove :name? This cannot be undone.', ['name' => $this->deletingUser?->name ?? __('this user')]) }}
+                </flux:subheading>
+            </div>
+
+            <div class="flex items-center justify-between">
+                <flux:modal.close>
+                    <flux:button variant="subtle">{{ __('Cancel') }}</flux:button>
+                </flux:modal.close>
+
+                <flux:button variant="danger" wire:click="deleteConfirmed">
+                    {{ __('Remove User') }}
+                </flux:button>
+            </div>
+        </div>
     </flux:modal>
 </div>
