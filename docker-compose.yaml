@@ -1,0 +1,57 @@
+name: workorder
+
+services:
+  app:
+    extends:
+      file: scripts/docker/compose.yaml
+      service: app
+    build:
+      context: .
+      dockerfile: scripts/docker/development/Dockerfile
+    image: ghcr.io/feryardiant/app-workorder:local
+    ports:
+      - ${APP_PORT:-8080}:8080
+      - ${DEV_PORT:-5173}:5173
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    environment:
+      APP_DEBUG: true
+      APP_ENV: local
+      DB_HOST: pgsql
+      MAIL_HOST: mailpit
+    volumes:
+      - .:/var/www/html
+      - node-modules:/var/www/html/node_modules
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2g
+
+  pgsql:
+    extends:
+      file: scripts/docker/compose.yaml
+      service: pgsql
+    ports:
+      - ${FORWARD_DB_PORT:-5432}:5432
+
+  mailpit:
+    extends:
+      file: scripts/docker/compose.yaml
+      service: mailpit
+    ports:
+      - ${FORWARD_MAILPIT_APP_PORT:-8025}:8025
+      - ${FORWARD_MAILPIT_MAIL_PORT:-1025}:1025
+
+networks:
+  default:
+    # name: app-workorder
+    enable_ipv6: false
+
+volumes:
+  mailpit-data:
+    driver: local
+  node-modules:
+    driver: local
+  pgsql-data:
+    driver: local

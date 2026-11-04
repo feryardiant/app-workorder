@@ -1,0 +1,57 @@
+{
+    "$schema": "https://www.schemastore.org/package.json",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "vp build",
+        "dev": "vp dev",
+        "format": "vp check --fix",
+        "lint": "vp check",
+        "prepare": "vp config"
+    },
+    "dependencies": {
+        "@fontsource/instrument-sans": "^5.3.0",
+        "tailwindcss": "^4.3.3"
+    },
+    "devDependencies": {
+        "@commitlint/cli": "^21.2.4",
+        "@commitlint/config-conventional": "^21.2.4",
+        "@laravel/passkeys": "^0.2.0",
+        "@tailwindcss/vite": "^4.3.4",
+        "@types/node": "^24.19.2",
+        "concurrently": "^10.0.6",
+        "laravel-vite-plugin": "^3.2.0",
+        "typescript": "^7.0.2",
+        "vite": "npm:@voidzero-dev/vite-plus-core@1.4.0",
+        "vite-plus": "1.4.0"
+    },
+    "optionalDependencies": {
+        "@laravel/multiplex": "^0.4.5",
+        "@rollup/rollup-linux-x64-gnu": "4.9.5",
+        "@tailwindcss/oxide-linux-x64-gnu": "^4.0.1",
+        "lightningcss-linux-x64-gnu": "^1.29.1"
+    },
+    "overrides": {
+        "vite": "npm:@voidzero-dev/vite-plus-core@1.4.0"
+    },
+    "commitlint": {
+        "extends": [
+            "@commitlint/config-conventional"
+        ]
+    },
+    "devEngines": {
+        "packageManager": {
+            "name": "npm",
+            "version": ">=11",
+            "onFail": "download"
+        },
+        "runtime": {
+            "name": "node",
+            "version": "^24 || ^26",
+            "onFail": "download"
+        }
+    },
+    "allowScripts": {
+        "fsevents": false
+    }
+}

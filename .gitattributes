@@ -1,0 +1,40 @@
+* text=auto eol=lf
+
+*.blade.php diff=html
+*.css diff=css
+*.html diff=html
+*.md diff=markdown
+*.php diff=php
+
+# AI Agents
+.agents                export-ignore
+AGENTS.md              export-ignore
+boost.json             export-ignore
+opencode.json          export-ignore
+
+# Dev Toolchain
+.github                export-ignore
+.tool-versions         export-ignore
+.vite-hooks            export-ignore
+*.config.js            export-ignore
+*.config.ts            export-ignore
+jsconfig.json          export-ignore
+mise.toml              export-ignore
+package.json           export-ignore
+package-lock.json      export-ignore
+phpstan.neon           export-ignore
+pint.json              export-ignore
+tests                  export-ignore
+tsconfig.json          export-ignore
+
+# Distribution
+.gitattributes         export-ignore
+.gitignore             export-ignore
+docker                 export-ignore
+docker-compose.yaml    export-ignore
+docker-compose.*.yaml  export-ignore
+
+# Editor
+.editorconfig          export-ignore
+.vscode                export-ignore
+.zed                   export-ignore

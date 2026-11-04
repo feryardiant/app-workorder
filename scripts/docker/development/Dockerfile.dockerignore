@@ -1,0 +1,7 @@
+.gitattributes
+.gitignore
+node_modules
+vendor
+**/.DS_Store
+**/.gitkeep
+**/Thumbs.db
