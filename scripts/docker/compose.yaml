@@ -1,0 +1,79 @@
+x-healthcheck: &healthcheck
+  interval: 10s
+  timeout: 5s
+  retries: 3
+
+x-deploy: &deploy
+  resources:
+    limits:
+      cpus: '0.5'
+      memory: 256m
+
+services:
+  app: &app
+    build:
+      args:
+        PHP_VERSION: ${PHP_VERSION:-8.4}
+        BASE_OS: ${BASE_OS:-alpine}
+        BASE_VERSION: ${BASE_VERSION:-3.24}
+    depends_on:
+      pgsql:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    pull_policy: build
+    env_file: ../../.env
+    environment:
+      AUTORUN_LARAVEL_MIGRATION: true
+      AUTORUN_LARAVEL_MIGRATION_SEED: true
+      LARAVEL_SAIL: 1
+      LOG_STACK: daily,stderr
+      TZ: Asia/Jakarta
+    labels:
+      dev.orbstack.http-port: 8080
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512m
+
+  worker:
+    image: ghcr.io/feryardiant/workorder:staging
+    pull_policy: never
+    depends_on:
+      app:
+        condition: service_healthy
+    env_file: ../../.env
+    environment:
+      AUTORUN_ENABLED: false
+      LARAVEL_SAIL: 1
+      TZ: Asia/Jakarta
+    stop_signal: SIGTERM
+    stop_grace_period: 90s
+    healthcheck:
+      <<: *healthcheck
+    deploy: *deploy
+
+  pgsql:
+    image: postgres:${DB_VERSION:-18.6}-${BASE_OS:-alpine}${BASE_VERSION:-3.24}
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-laravel}
+      POSTGRES_USER: ${DB_USERNAME:-laravel}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+      TZ: Asia/Jakarta
+    volumes:
+      - pgsql-data:/var/lib/postgresql
+      - ./init-database.sql:/docker-entrypoint-initdb.d/10-init-database.sql
+    healthcheck:
+      test: [CMD, pg_isready, -q, '-d${DB_DATABASE:-laravel}', '-U${DB_USERNAME:-laravel}']
+      <<: *healthcheck
+    deploy: *deploy
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    environment:
+      TZ: Asia/Jakarta
+    volumes:
+      - mailpit-data:/data
+    labels:
+      dev.orbstack.http-port: 8025
