@@ -1,6 +1,6 @@
 # Workorder Application
 
-Laravel 13 / PHP 8.4 app. UI is Blade + Livewire 4 single-file components with Flux UI 2 and Tailwind 4. Authentication is Fortify. There is no Inertia, React, or Vue.
+Laravel 13 / PHP 8.4 app. UI is Blade + Livewire 4 + Flux UI 2 + Tailwind 4; auth is Fortify.
 
 ## Commands
 
@@ -16,36 +16,37 @@ Laravel 13 / PHP 8.4 app. UI is Blade + Livewire 4 single-file components with F
 | One test file | `php artisan test --compact tests/Feature/DashboardTest.php` |
 | One test | `vendor/bin/pest tests/Feature/DashboardTest.php --filter=testName` |
 
+- Local `.env` uses PostgreSQL (`DB_CONNECTION=pgsql`) and `APP_URL=http://localhost:8080`; `docker-compose.yaml` provides `app`, `pgsql`, and `mailpit`. Start `docker compose up -d pgsql mailpit` before `composer setup`, migrations, or tests when running on the host.
 - Use npm: `package-lock.json` is the committed lockfile (pnpm/yarn lockfiles are ignored). Versions come from `mise.toml` (PHP 8.4, Node 24).
-- Vite, formatter, and linter settings all live in `vite.config.ts`; there are no separate ESLint/Prettier config files.
+- Vite, formatter, linter, and staged-file settings all live in `vite.config.ts`; there are no separate ESLint/Prettier config files.
 - Pint enforces `declare(strict_types=1)`, `native_function_invocation`, and FQCN imports. Add the strict-types declaration to new PHP files and let Pint fix the rest.
 - Pass `--no-interaction` to Artisan commands.
 
 ## Architecture
 
-- `routes/web.php` only defines home and dashboard, then requires `routes/settings.php`.
-- Auth routes are Fortify vendor routes, not in `routes/`. Views are bound in `app/Providers/FortifyServiceProvider.php`, custom actions live in `app/Actions/Fortify/`, and shared validation rules in `app/Concerns/`. Features and passkeys are toggled in `config/fortify.php`.
-- Livewire 4 page components are single-file components at `resources/views/pages/**/⚡*.blade.php`, routed with `Route::livewire('settings/profile', 'pages::settings.profile')`. The PHP class is embedded at the top of the Blade file.
+- `routes/web.php` defines home and a plain-Blade dashboard (`resources/views/dashboard.blade.php`, `auth` + `verified`), then requires `routes/settings.php`.
+- Livewire 4 components are class-based: classes in `app/Livewire/**` with Blade views in `resources/views/livewire/**`, routed by class via `Route::livewire('settings/profile', Profile::class)`.
+- Fortify registration is disabled; enabled features are password reset, email verification, and 2FA (`config/fortify.php`). Auth screens are plain Blade forms under `resources/views/livewire/auth/`, bound in `app/Providers/FortifyServiceProvider.php`. Custom actions live in `app/Actions/Fortify/`, shared validation rules in `app/Concerns/`.
 - Layouts are in `resources/views/layouts/`; local Flux overrides are in `resources/views/flux/`.
 - `resources/js/app.ts` is a near-empty entrypoint; styles are in `resources/css/app.css` (Tailwind 4 `@theme` plus the Flux CSS import).
 - `User` uses Laravel 13 attribute style (`#[Fillable([...])]`, `#[Hidden([...])]`) instead of `$fillable`/`$hidden`. Update the attributes when adding fields.
 
 ## Database and tests
 
-- Local default is SQLite (`database/database.sqlite`); CI runs PostgreSQL 18 with framework tables (`cache`, `jobs`, `sessions`) in a separate `system` schema. Keep migrations portable across both.
-- The `create_system_schema` migration is PostgreSQL-only and skips itself on other drivers.
-- Every Feature test uses `RefreshDatabase` automatically (`tests/Pest.php`) and runs against the connection in `.env`, so a local `php artisan test` resets `database/database.sqlite`. Do not point tests at data you need; `phpunit.xml` does not override the connection.
-- Fortify feature tests use `$this->skipUnlessFortifyHas(...)` from `tests/TestCase.php` rather than asserting on disabled features.
+- CI (`.github/workflows/tests.yml`) uses PostgreSQL 18, builds with `vp build`, runs migrations, then `composer test`. Framework tables (`cache`, `jobs`, `sessions`) live in a separate `system` schema; `create_system_schema` is PostgreSQL-only and skips itself on other drivers. Keep migrations portable.
+- `phpunit.xml` deliberately leaves the DB env vars commented, so tests use the `.env` connection: a local `php artisan test` runs against your dev PostgreSQL and `RefreshDatabase` wipes it. Never point tests at data you need.
+- Every Feature test automatically uses `RefreshDatabase` (`tests/Pest.php`). Fortify feature tests use `$this->skipUnlessFortifyHas(...)` from `tests/TestCase.php` instead of asserting on disabled features.
+- Add a feature test for behavior changes instead of writing a verification script or tinker snippet.
 
 ## Boost MCP
 
 - `opencode.json` and `.zed/settings.json` start `php artisan boost:mcp`. Prefer Boost tools over shell or manual guesses: `search-docs` for Laravel/Livewire/Flux APIs, `database-query` for read-only SQL, `database-schema` before schema changes, `browser-logs` for frontend errors, and `get-absolute-url` before sharing a URL.
-- Read the matching skill before framework work: `livewire-development`, `fluxui-development`, `fortify-development`, `tailwindcss-development`, `laravel-best-practices`, or `testing-best-practices`.
+- Read the matching skill in `.agents/skills/` before framework work: `livewire-development`, `fluxui-development`, `fortify-development`, `tailwindcss-development`, `laravel-best-practices`, or `testing-best-practices`.
 
 ## Conventions
 
+- Git hooks in `.vite-hooks/` run `vp staged` before commits (auto-formats staged files) and commitlint on the message; use Conventional Commits.
 - Follow sibling files for structure, naming, and patterns; reuse existing components before creating new ones.
 - Do not add dependencies without approval.
 - Only create documentation files when explicitly requested.
-- Add a feature test for behavior changes instead of writing a verification script or tinker snippet.
 - If a frontend change does not appear or Vite reports a missing manifest entry, run `npm run build` (or start `npm run dev` / `composer run dev`).
