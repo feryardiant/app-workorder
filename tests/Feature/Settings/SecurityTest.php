@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Livewire\Settings\Security;
 use App\Models\User;
+use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Fortify\Features;
 use Livewire\Livewire;
@@ -41,6 +42,11 @@ test('security settings page requires password confirmation when enabled', funct
         ->get(route('security.edit'));
 
     $response->assertRedirect(route('password.confirm'));
+});
+
+test('password confirmation is re-applied to livewire requests', function () {
+    expect(Livewire::getPersistentMiddleware())
+        ->toContain(RequirePassword::class);
 });
 
 test('security settings page renders without two factor when feature is disabled', function () {

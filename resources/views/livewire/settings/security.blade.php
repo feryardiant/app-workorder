@@ -215,11 +215,13 @@
                                             type="text"
                                             readonly
                                             value="{{ $manualSetupKey }}"
+                                            aria-label="{{ __('Setup key') }}"
                                             class="w-full p-3 bg-transparent outline-none text-stone-900 dark:text-stone-100"
                                         />
 
                                         <button
                                             @click="copy()"
+                                            aria-label="{{ __('Copy setup key') }}"
                                             class="px-3 transition-colors border-l cursor-pointer border-stone-200 dark:border-stone-600"
                                         >
                                             <flux:icon.document-duplicate x-show="!copied" variant="outline"></flux:icon>

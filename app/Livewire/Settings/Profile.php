@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Livewire\Settings;
 
 use App\Concerns\ProfileValidationRules;
+use App\Models\User;
 use Flux\Flux;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -35,7 +37,10 @@ class Profile extends Component
      */
     public function updateProfileInformation(): void
     {
+        /** @var User */
         $user = Auth::user();
+
+        $this->email = Str::lower($this->email);
 
         $validated = $this->validate($this->profileRules($user->id));
 
@@ -55,6 +60,7 @@ class Profile extends Component
      */
     public function resendVerificationNotification(): void
     {
+        /** @var User */
         $user = Auth::user();
 
         if ($user->hasVerifiedEmail()) {

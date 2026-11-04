@@ -4,11 +4,16 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Events\UserRoleChanged;
+use App\Listeners\SendUserRoleChangedNotification;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Livewire\Livewire;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -25,6 +30,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Event::listen(UserRoleChanged::class, SendUserRoleChangedNotification::class);
+
+        // Re-check password confirmation on Livewire requests to routes that use it.
+        Livewire::addPersistentMiddleware(RequirePassword::class);
+
         $this->configureDefaults();
     }
 
@@ -35,9 +45,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Date::use(CarbonImmutable::class);
 
-        DB::prohibitDestructiveCommands(
-            app()->isProduction(),
-        );
+        DB::prohibitDestructiveCommands(app()->isProduction());
 
         Password::defaults(fn (): ?Password => app()->isProduction()
             ? Password::min(12)

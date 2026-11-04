@@ -15,6 +15,7 @@
         "livewire/livewire": "^4.1"
     },
     "require-dev": {
+        "barryvdh/laravel-ide-helper": "^3.8",
         "fakerphp/faker": "^1.24",
         "larastan/larastan": "^3.9",
         "laravel/boost": "^2.2",
@@ -71,7 +72,8 @@
         ],
         "post-update-cmd": [
             "@php artisan vendor:publish --tag=laravel-assets --ansi --force",
-            "@php artisan boost:update --ansi"
+            "@php artisan boost:update --ansi",
+            "@php artisan ide-helper:generate --ansi"
         ],
         "post-root-package-install": [
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""

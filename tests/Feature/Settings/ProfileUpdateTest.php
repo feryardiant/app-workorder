@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\Role;
 use App\Livewire\Settings\Profile;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -71,4 +72,29 @@ test('correct password must be provided to delete account', function () {
     $response->assertHasErrors(['password']);
 
     expect($user->fresh())->not->toBeNull();
+});
+
+test('the last owner cannot delete their account', function () {
+    actingAs($owner = User::factory()->withRole(Role::Owner)->create());
+
+    Livewire::test('settings.delete-user-form')
+        ->set('password', 'password')
+        ->call('deleteUser')
+        ->assertHasErrors(['password']);
+
+    expect($owner->fresh())->not->toBeNull()
+        ->and(Auth::check())->toBeTrue();
+});
+
+test('an owner can delete their account when another owner exists', function () {
+    User::factory()->withRole(Role::Owner)->create();
+
+    actingAs($owner = User::factory()->withRole(Role::Owner)->create());
+
+    Livewire::test('settings.delete-user-form')
+        ->set('password', 'password')
+        ->call('deleteUser')
+        ->assertHasNoErrors();
+
+    expect($owner->fresh())->toBeNull();
 });
