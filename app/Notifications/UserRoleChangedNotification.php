@@ -31,16 +31,11 @@ class UserRoleChangedNotification extends Notification
     {
         $app = config('app.name');
 
-        $action = $this->newRole->isAdmin()
-            ? __('promoted')
-            : __('demoted');
-
         return (new MailMessage)
             ->subject(__('Your role at :app has changed', ['app' => $app]))
             ->greeting(__('Hi :name', ['name' => $notifiable->name]))
-            ->line(__(':actor just :action you to the :role role at :app.', [
+            ->line(__(':actor just changed your role to :role at :app.', [
                 'actor' => $this->actor->name,
-                'action' => $action,
                 'role' => $this->newRole->label(),
                 'app' => $app,
             ]))

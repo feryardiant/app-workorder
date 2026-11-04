@@ -7,7 +7,7 @@
 
         @if (auth()->user()->role->canManageUsers())
             <flux:button variant="primary" icon="plus" wire:click="$set('showCreateModal', true)">
-                {{ __('Add User') }}
+                {{ __('Add user') }}
             </flux:button>
         @endif
     </div>
@@ -70,17 +70,17 @@
                                 <flux:menu>
                                     @if (auth()->user()->role->isOwner() || ! $user->role->isOwner())
                                         <flux:menu.item icon="pencil-square" wire:click="openEdit({{ $user->id }})">
-                                            {{ __('Edit User') }}
+                                            {{ __('Edit user') }}
                                         </flux:menu.item>
                                     @endif
 
                                     @if ($user->role->isMember())
                                         <flux:menu.item icon="arrow-up-circle" wire:click="confirmPromote({{ $user->id }})">
-                                            {{ __('Promote Admin') }}
+                                            {{ __('Promote admin') }}
                                         </flux:menu.item>
                                     @elseif ($user->role->isAdmin())
                                         <flux:menu.item icon="arrow-down-circle" wire:click="confirmDemote({{ $user->id }})">
-                                            {{ __('Demote Admin') }}
+                                            {{ __('Demote admin') }}
                                         </flux:menu.item>
                                     @endif
 
@@ -91,7 +91,7 @@
                                         icon="trash"
                                         wire:click="confirmDelete({{ $user->id }})"
                                     >
-                                        {{ __('Remove User') }}
+                                        {{ __('Remove user') }}
                                     </flux:menu.item>
                                 </flux:menu>
                             </flux:dropdown>
@@ -162,7 +162,7 @@
                 </flux:modal.close>
 
                 <flux:button variant="danger" wire:click="deleteConfirmed">
-                    {{ __('Remove User') }}
+                    {{ __('Remove user') }}
                 </flux:button>
             </div>
         </div>
@@ -195,7 +195,7 @@
                     :variant="$this->roleChangeIsPromotion ? 'primary' : 'danger'"
                     wire:click="changeRoleConfirmed"
                 >
-                    {{ $this->roleChangeIsPromotion ? __('Promote Admin') : __('Demote Admin') }}
+                    {{ $this->roleChangeIsPromotion ? __('Promote admin') : __('Demote admin') }}
                 </flux:button>
             </div>
         </div>

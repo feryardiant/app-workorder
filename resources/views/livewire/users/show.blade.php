@@ -22,16 +22,16 @@
             <div class="flex items-center gap-2">
                 @if ($user->role->isMember())
                     <flux:button wire:click="confirmPromote" icon="arrow-up-circle">
-                        {{ __('Promote Admin') }}
+                        {{ __('Promote admin') }}
                     </flux:button>
                 @elseif ($user->role->isAdmin())
                     <flux:button wire:click="confirmDemote" icon="arrow-down-circle">
-                        {{ __('Demote Admin') }}
+                        {{ __('Demote admin') }}
                     </flux:button>
                 @endif
 
                 <flux:button variant="primary" wire:click="openEdit" icon="pencil-square">
-                    {{ __('Edit User') }}
+                    {{ __('Edit user') }}
                 </flux:button>
             </div>
         @endif
@@ -87,7 +87,7 @@
                     :variant="$this->roleChangeIsPromotion ? 'primary' : 'danger'"
                     wire:click="changeRoleConfirmed"
                 >
-                    {{ $this->roleChangeIsPromotion ? __('Promote Admin') : __('Demote Admin') }}
+                    {{ $this->roleChangeIsPromotion ? __('Promote admin') : __('Demote admin') }}
                 </flux:button>
             </div>
         </div>

@@ -42,9 +42,9 @@ test('the users table shows role labels and verification status', function () {
     User::factory()->withRole(Role::Member)->unverified()->create(['name' => 'Unverified Member']);
 
     Livewire::test(Index::class)
-        ->assertSee('Owner')
-        ->assertSee('Verified')
-        ->assertSee('Waiting');
+        ->assertSee('Pemilik')
+        ->assertSee('Terverifikasi')
+        ->assertSee('Menunggu');
 });
 
 test('the users table is paginated', function () {
@@ -121,9 +121,9 @@ test('the user view shows the role and verification status', function () {
     get(route('users.show', $user))
         ->assertOk()
         ->assertSee('Owner User')
-        ->assertSee('Owner')
+        ->assertSee('Pemilik')
         ->assertSee('owner@example.com')
-        ->assertSee('Verified');
+        ->assertSee('Terverifikasi');
 });
 
 test('an admin can promote a member to admin', function () {
@@ -146,7 +146,7 @@ test('an admin can promote a member to admin', function () {
         $message = $notification->toMail($member);
 
         return str_contains((string) $message->introLines[0], $actor->name)
-            && str_contains((string) $message->introLines[0], 'promoted');
+            && str_contains((string) $message->introLines[0], 'mengubah peran');
     });
 });
 
@@ -339,16 +339,16 @@ test('an admin cannot edit or remove an owner', function () {
 });
 
 test('the add user button is only visible to admins and owners', function () {
+    $addButton = 'wire:click="$set(\'showCreateModal\', true)"';
+
     actingAs(User::factory()->withRole(Role::Member)->create());
-    get(route('users.index'))
-        ->assertDontSee('Add User')
-        ->assertDontSee('Edit User');
+    get(route('users.index'))->assertDontSee($addButton, false);
 
     actingAs(User::factory()->withRole(Role::Admin)->create(), 'web');
-    get(route('users.index'))->assertSee('Add User');
+    get(route('users.index'))->assertSee($addButton, false);
 
     actingAs(User::factory()->withRole(Role::Owner)->create(), 'web');
-    get(route('users.index'))->assertSee('Add User');
+    get(route('users.index'))->assertSee($addButton, false);
 });
 
 test('an admin can create a user and a verification email is sent', function () {
