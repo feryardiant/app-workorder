@@ -16,7 +16,7 @@
     "devDependencies": {
         "@commitlint/cli": "^21.2.4",
         "@commitlint/config-conventional": "^21.2.4",
-        "@laravel/passkeys": "^0.2.0",
+        "@laravel/passkeys": "^0.4.0",
         "@tailwindcss/vite": "^4.3.4",
         "@types/node": "^24.19.2",
         "concurrently": "^10.0.6",
@@ -27,7 +27,7 @@
     },
     "optionalDependencies": {
         "@laravel/multiplex": "^0.4.5",
-        "@rollup/rollup-linux-x64-gnu": "4.9.5",
+        "@rollup/rollup-linux-x64-gnu": "4.67.3",
         "@tailwindcss/oxide-linux-x64-gnu": "^4.0.1",
         "lightningcss-linux-x64-gnu": "^1.29.1"
     },
