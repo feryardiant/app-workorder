@@ -10,20 +10,22 @@ if [ -z "$ZED_MAIN_GIT_WORKTREE" ] || [ -z "$ZED_WORKTREE_ROOT" ]; then
     exit 1
 fi
 
-files=(
+copies=(
     ".env"
+    ".env.testing"
 )
 
-dir_links=(
+links=(
     ".agents/skills"
+    ".agents/specs"
 )
 
-for file in "${files[@]}"; do
+for file in "${copies[@]}"; do
     [ -f "$ZED_MAIN_GIT_WORKTREE/$file" ] && cp -n "$ZED_MAIN_GIT_WORKTREE/$file" "$ZED_WORKTREE_ROOT/$file"
 done
 
-for dir in "${dir_links[@]}"; do
-    [ -d "$ZED_MAIN_GIT_WORKTREE/$dir" ] && ln -s "$ZED_MAIN_GIT_WORKTREE/$dir" "$ZED_WORKTREE_ROOT/$dir"
+for file in "${links[@]}"; do
+    [ -d "$ZED_MAIN_GIT_WORKTREE/$file" ] && ln -s "$ZED_MAIN_GIT_WORKTREE/$file" "$ZED_WORKTREE_ROOT/$file"
 done
 
 cd "$ZED_WORKTREE_ROOT" || exit 0
@@ -32,3 +34,4 @@ composer install --no-interaction
 npm install
 
 php artisan key:generate
+php artisan ide-helper:generate
