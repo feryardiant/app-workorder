@@ -23,7 +23,7 @@ jobs:
   unit:
     name: Unit
     runs-on: ubuntu-latest
-    needs: [prepare, build]
+    needs: [prepare]
     if: ${{ needs.prepare.outputs.should-release != '1' }}
     permissions:
       contents: read
