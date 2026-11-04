@@ -29,12 +29,21 @@ class DatabaseSeeder extends Seeder
             return;
         }
 
-        // User::factory(10)->create();
+        User::factory()->create([
+            'email' => 'owner@example.com',
+            'role' => Role::Owner,
+        ]);
 
         User::factory()->create([
-            'name' => 'Test Admin',
-            'email' => 'test@example.com',
+            'email' => 'admin@example.com',
             'role' => Role::Admin,
         ]);
+
+        User::factory()->create([
+            'email' => 'member@example.com',
+            'role' => Role::Member,
+        ]);
+
+        User::factory(2)->create(['role' => Role::Member]);
     }
 }

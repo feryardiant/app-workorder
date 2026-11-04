@@ -30,7 +30,7 @@ class UserFactory extends Factory
         $email = fake()->unique()->safeEmail();
 
         return [
-            'name' => fake()->name(),
+            'name' => fake()->firstName().' '.fake()->lastName(),
             'email' => $email,
             'handle' => explode('@', $email)[0],
             'role' => Role::Member,
