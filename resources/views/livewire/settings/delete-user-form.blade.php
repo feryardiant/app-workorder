@@ -20,7 +20,10 @@
                 </flux:subheading>
             </div>
 
-            <flux:input wire:model="password" :label="__('Password')" type="password" viewable />
+            <flux:field>
+                <flux:input wire:model="password" :label="__('Password')" type="password" viewable />
+                <flux:error name="password" />
+            </flux:field>
 
             <div class="flex justify-end space-x-2 rtl:space-x-reverse">
                 <flux:modal.close>
