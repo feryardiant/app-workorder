@@ -14,11 +14,12 @@
 
     <flux:separator variant="subtle" />
 
-    <flux:table>
+    <flux:table :paginate="$users">
         <flux:table.columns>
             <flux:table.column>{{ __('Name') }}</flux:table.column>
-            <flux:table.column>{{ __('Email') }}</flux:table.column>
-            <flux:table.column>{{ __('Registered at') }}</flux:table.column>
+            <flux:table.column class="w-1/5">{{ __('Email') }}</flux:table.column>
+            <flux:table.column align="center" class="w-[15%]">{{ __('Role') }}</flux:table.column>
+            <flux:table.column align="end" class="w-[15%]">{{ __('Registered at') }}</flux:table.column>
             <flux:table.column align="end">{{ __('Actions') }}</flux:table.column>
         </flux:table.columns>
 
@@ -27,8 +28,10 @@
                 @php($isCurrentUser = $user->is(auth()->user()))
 
                 <flux:table.row :key="$user->id" :class="$isCurrentUser ? 'bg-zinc-100/60 dark:bg-zinc-700/30' : ''">
-                    <flux:table.cell>
+                    <flux:table.cell class="w-7/12">
                         <span class="inline-flex items-center gap-2">
+                            <flux:avatar size="sm" :initials="$user->initials()" />
+
                             <flux:link :href="route('users.show', $user)" wire:navigate>{{ $user->name }}</flux:link>
 
                             @if ($isCurrentUser)
@@ -37,13 +40,23 @@
                         </span>
                     </flux:table.cell>
 
-                    <flux:table.cell>{{ $user->email }}</flux:table.cell>
+                    <flux:table.cell class="w-2/12">
+                        <span class="inline-flex items-center gap-2">
+                            {{ $user->email }}
 
-                    <flux:table.cell class="whitespace-nowrap">
+                            <x-verification-badge :user="$user" />
+                        </span>
+                    </flux:table.cell>
+
+                    <flux:table.cell align="center" class="w-1/12">
+                        {{ $user->role->label() }}
+                    </flux:table.cell>
+
+                    <flux:table.cell align="end" class="w-1/12 whitespace-nowrap">
                         {{ $user->created_at?->toFormattedDateString() ?? '—' }}
                     </flux:table.cell>
 
-                    <flux:table.cell align="end">
+                    <flux:table.cell align="end" class="w-1/12">
                         @if (! $isCurrentUser && auth()->user()->role->canManageUsers())
                             <flux:dropdown align="end">
                                 <flux:button
@@ -55,9 +68,23 @@
                                 />
 
                                 <flux:menu>
-                                    <flux:menu.item :href="route('users.edit', $user)" icon="pencil-square" wire:navigate>
-                                        {{ __('Edit User') }}
-                                    </flux:menu.item>
+                                    @if (auth()->user()->role->isOwner() || ! $user->role->isOwner())
+                                        <flux:menu.item icon="pencil-square" wire:click="openEdit({{ $user->id }})">
+                                            {{ __('Edit User') }}
+                                        </flux:menu.item>
+                                    @endif
+
+                                    @if ($user->role->isMember())
+                                        <flux:menu.item icon="arrow-up-circle" wire:click="confirmPromote({{ $user->id }})">
+                                            {{ __('Promote Admin') }}
+                                        </flux:menu.item>
+                                    @elseif ($user->role->isAdmin())
+                                        <flux:menu.item icon="arrow-down-circle" wire:click="confirmDemote({{ $user->id }})">
+                                            {{ __('Demote Admin') }}
+                                        </flux:menu.item>
+                                    @endif
+
+                                    <flux:menu.separator />
 
                                     <flux:menu.item
                                         variant="danger"
@@ -140,4 +167,39 @@
             </div>
         </div>
     </flux:modal>
+
+    <flux:modal
+        wire:model.self="showRoleModal"
+        class="md:w-96"
+        x-init="$el.querySelector('dialog')?.setAttribute('aria-labelledby', 'role-change-heading')"
+    >
+        <div class="space-y-6">
+            <div>
+                <flux:heading id="role-change-heading" size="lg">
+                    {{ $this->roleChangeIsPromotion ? __('Promote user') : __('Demote user') }}
+                </flux:heading>
+
+                <flux:subheading>
+                    {{ $this->roleChangeIsPromotion
+                        ? __('Promote :name to Admin?', ['name' => $this->roleChangeUser?->name ?? __('this user')])
+                        : __('Demote :name to Member?', ['name' => $this->roleChangeUser?->name ?? __('this user')]) }}
+                </flux:subheading>
+            </div>
+
+            <div class="flex items-center justify-between">
+                <flux:modal.close>
+                    <flux:button variant="subtle">{{ __('Cancel') }}</flux:button>
+                </flux:modal.close>
+
+                <flux:button
+                    :variant="$this->roleChangeIsPromotion ? 'primary' : 'danger'"
+                    wire:click="changeRoleConfirmed"
+                >
+                    {{ $this->roleChangeIsPromotion ? __('Promote Admin') : __('Demote Admin') }}
+                </flux:button>
+            </div>
+        </div>
+    </flux:modal>
+
+    <livewire:users.edit />
 </div>

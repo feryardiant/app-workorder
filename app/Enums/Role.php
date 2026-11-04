@@ -29,4 +29,13 @@ enum Role: int
     {
         return $this->isOwner() || $this->isAdmin();
     }
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::Owner => __('Owner'),
+            self::Admin => __('Admin'),
+            self::Member => __('Member'),
+        };
+    }
 }

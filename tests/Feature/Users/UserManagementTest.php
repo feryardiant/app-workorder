@@ -3,11 +3,15 @@
 declare(strict_types=1);
 
 use App\Enums\Role;
+use App\Events\UserRoleChanged;
 use App\Livewire\Users\Edit;
 use App\Livewire\Users\Index;
+use App\Livewire\Users\Show;
 use App\Models\User;
+use App\Notifications\UserRoleChangedNotification;
 use App\Notifications\VerifyEmailForNewUser;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
@@ -32,6 +36,27 @@ test('the users page lists all users', function () {
         ->assertSee('Other User');
 });
 
+test('the users table shows role labels and verification status', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    User::factory()->withRole(Role::Owner)->create(['name' => 'Verified Owner']);
+    User::factory()->withRole(Role::Member)->unverified()->create(['name' => 'Unverified Member']);
+
+    Livewire::test(Index::class)
+        ->assertSee('Owner')
+        ->assertSee('Verified')
+        ->assertSee('Waiting');
+});
+
+test('the users table is paginated', function () {
+    actingAs(User::factory()->create());
+    User::factory()->count(14)->create();
+
+    Livewire::test(Index::class)
+        ->assertViewHas('users', fn ($users) => $users->count() === 10 && $users->total() === 15)
+        ->call('gotoPage', 2)
+        ->assertViewHas('users', fn ($users) => $users->count() === 5);
+});
+
 test('a user can be viewed', function () {
     actingAs(User::factory()->create());
     $user = User::factory()->create(['name' => 'Other User', 'email' => 'other@example.com']);
@@ -40,6 +65,21 @@ test('a user can be viewed', function () {
         ->assertOk()
         ->assertSee('Other User')
         ->assertSee('other@example.com');
+});
+
+test('the edit user modal opens from the users table', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $user = User::factory()->create();
+
+    Livewire::test(Index::class)
+        ->call('openEdit', $user->id)
+        ->assertDispatched('edit-user');
+
+    Livewire::test(Edit::class)
+        ->dispatch('edit-user', userId: $user->id)
+        ->assertSet('showModal', true)
+        ->assertSet('name', $user->name)
+        ->assertSet('email', $user->email);
 });
 
 test('an admin can edit a user', function () {
@@ -51,7 +91,8 @@ test('an admin can edit a user', function () {
         ->set('email', 'updated@example.com')
         ->call('update')
         ->assertHasNoErrors()
-        ->assertRedirect(route('users.index'));
+        ->assertSet('showModal', false)
+        ->assertDispatched('user-updated');
 
     expect($user->refresh())
         ->name->toBe('Updated Name')
@@ -68,6 +109,158 @@ test('editing to a mixed-case duplicate email fails validation', function () {
         ->set('email', 'Taken@Example.com')
         ->call('update')
         ->assertHasErrors(['email']);
+});
+
+test('the user view shows the role and verification status', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $user = User::factory()->withRole(Role::Owner)->create([
+        'name' => 'Owner User',
+        'email' => 'owner@example.com',
+    ]);
+
+    get(route('users.show', $user))
+        ->assertOk()
+        ->assertSee('Owner User')
+        ->assertSee('Owner')
+        ->assertSee('owner@example.com')
+        ->assertSee('Verified');
+});
+
+test('an admin can promote a member to admin', function () {
+    Notification::fake();
+
+    $actor = User::factory()->withRole(Role::Admin)->create();
+    $member = User::factory()->withRole(Role::Member)->create();
+
+    actingAs($actor);
+
+    Livewire::test(Index::class)
+        ->call('confirmPromote', $member->id)
+        ->call('changeRoleConfirmed')
+        ->assertHasNoErrors()
+        ->assertDispatched('toast-show', fn (string $name, array $params) => ($params['dataset']['variant'] ?? null) === 'success');
+
+    expect($member->refresh()->role)->toBe(Role::Admin);
+
+    Notification::assertSentTo($member, UserRoleChangedNotification::class, function ($notification) use ($member, $actor) {
+        $message = $notification->toMail($member);
+
+        return str_contains((string) $message->introLines[0], $actor->name)
+            && str_contains((string) $message->introLines[0], 'promoted');
+    });
+});
+
+test('an admin can demote an admin to member', function () {
+    Notification::fake();
+
+    $actor = User::factory()->withRole(Role::Admin)->create();
+    $admin = User::factory()->withRole(Role::Admin)->create();
+
+    actingAs($actor);
+
+    Livewire::test(Index::class)
+        ->call('confirmDemote', $admin->id)
+        ->call('changeRoleConfirmed')
+        ->assertHasNoErrors()
+        ->assertDispatched('toast-show', fn (string $name, array $params) => ($params['dataset']['variant'] ?? null) === 'success');
+
+    expect($admin->refresh()->role)->toBe(Role::Member);
+
+    Notification::assertSentTo($admin, UserRoleChangedNotification::class);
+});
+
+test('a role change requires confirmation', function () {
+    Notification::fake();
+
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $member = User::factory()->withRole(Role::Member)->create();
+
+    Livewire::test(Index::class)
+        ->call('confirmPromote', $member->id)
+        ->assertSet('showRoleModal', true)
+        ->assertSet('roleChangeTo', Role::Admin->value);
+
+    expect($member->refresh()->role)->toBe(Role::Member);
+
+    Livewire::test(Index::class)
+        ->call('confirmPromote', $member->id)
+        ->call('changeRoleConfirmed')
+        ->assertSet('showRoleModal', false);
+
+    expect($member->refresh()->role)->toBe(Role::Admin);
+
+    Livewire::test(Index::class)
+        ->call('confirmDemote', $member->id)
+        ->call('changeRoleConfirmed');
+
+    expect($member->refresh()->role)->toBe(Role::Member);
+});
+
+test('a role change dispatches the user role changed event', function () {
+    Event::fake([UserRoleChanged::class]);
+
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $member = User::factory()->withRole(Role::Member)->create();
+
+    Livewire::test(Index::class)
+        ->call('confirmPromote', $member->id)
+        ->call('changeRoleConfirmed');
+
+    Event::assertDispatched(
+        UserRoleChanged::class,
+        fn (UserRoleChanged $event) => $event->user->is($member)
+            && $event->previousRole === Role::Member
+            && $event->newRole === Role::Admin,
+    );
+});
+
+test('a member cannot change roles', function () {
+    actingAs(User::factory()->withRole(Role::Member)->create());
+    $member = User::factory()->withRole(Role::Member)->create();
+
+    Livewire::test(Index::class)
+        ->call('confirmPromote', $member->id)
+        ->call('changeRoleConfirmed')
+        ->assertDispatched('toast-show', fn (string $name, array $params) => ($params['dataset']['variant'] ?? null) === 'danger');
+
+    expect($member->refresh()->role)->toBe(Role::Member);
+});
+
+test('role changes only apply to the expected current role', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+
+    $admin = User::factory()->withRole(Role::Admin)->create();
+    $member = User::factory()->withRole(Role::Member)->create();
+
+    Livewire::test(Index::class)
+        ->call('confirmPromote', $admin->id)
+        ->call('changeRoleConfirmed')
+        ->assertDispatched('toast-show', fn (string $name, array $params) => ($params['dataset']['variant'] ?? null) === 'danger');
+
+    Livewire::test(Index::class)
+        ->call('confirmDemote', $member->id)
+        ->call('changeRoleConfirmed')
+        ->assertDispatched('toast-show', fn (string $name, array $params) => ($params['dataset']['variant'] ?? null) === 'danger');
+
+    expect($admin->refresh()->role)->toBe(Role::Admin)
+        ->and($member->refresh()->role)->toBe(Role::Member);
+});
+
+test('an admin can promote a member from the user view', function () {
+    Notification::fake();
+
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $member = User::factory()->withRole(Role::Member)->create();
+
+    Livewire::test(Show::class, ['user' => $member])
+        ->call('confirmPromote')
+        ->assertSet('showRoleModal', true)
+        ->call('changeRoleConfirmed')
+        ->assertHasNoErrors();
+
+    expect($member->refresh()->role)->toBe(Role::Admin);
+
+    Notification::assertSentTo($member, UserRoleChangedNotification::class);
 });
 
 test('an admin can remove a user', function () {
@@ -123,7 +316,7 @@ test('a member cannot edit or remove users', function () {
     actingAs(User::factory()->withRole(Role::Member)->create());
     $user = User::factory()->create();
 
-    Livewire::test(Edit::class, ['user' => $user])->assertForbidden();
+    Livewire::test(Edit::class)->call('editUser', $user->id)->assertForbidden();
 
     Livewire::test(Index::class)
         ->call('deleteUser', $user->id)
@@ -136,7 +329,7 @@ test('an admin cannot edit or remove an owner', function () {
     actingAs(User::factory()->withRole(Role::Admin)->create());
     $owner = User::factory()->withRole(Role::Owner)->create();
 
-    Livewire::test(Edit::class, ['user' => $owner])->assertForbidden();
+    Livewire::test(Edit::class)->call('editUser', $owner->id)->assertForbidden();
 
     Livewire::test(Index::class)
         ->call('deleteUser', $owner->id)

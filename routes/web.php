@@ -6,7 +6,6 @@ use App\Http\Controllers\VerifyNewUserEmailController;
 use App\Livewire\Settings\Appearance;
 use App\Livewire\Settings\Profile;
 use App\Livewire\Settings\Security;
-use App\Livewire\Users\Edit;
 use App\Livewire\Users\Index;
 use App\Livewire\Users\Show;
 use Illuminate\Support\Facades\Route;
@@ -22,7 +21,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::livewire('users', Index::class)->name('users.index');
     Route::livewire('users/{user}', Show::class)->name('users.show');
-    Route::livewire('users/{user}/edit', Edit::class)->name('users.edit');
 });
 
 Route::middleware(['auth'])->group(function () {

@@ -10,31 +10,43 @@ use Flux\Flux;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-use Livewire\Attributes\Title;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
-#[Title('Edit user')]
 class Edit extends Component
 {
     use ProfileValidationRules;
 
-    public User $user;
+    public ?User $user = null;
+
+    public bool $showModal = false;
 
     public string $name = '';
 
     public string $email = '';
 
-    public function mount(User $user): void
+    public function mount(?User $user = null): void
     {
-        $this->authorizeUserManagement($user);
+        if ($user instanceof User) {
+            $this->fillFrom($user);
+        }
+    }
 
-        $this->user = $user;
-        $this->name = $user->name;
-        $this->email = $user->email;
+    #[On('edit-user')]
+    public function editUser(int $userId): void
+    {
+        $user = User::findOrFail($userId);
+
+        $this->authorizeUserManagement($user);
+        $this->fillFrom($user);
+
+        $this->showModal = true;
     }
 
     public function update(): void
     {
+        abort_if($this->user === null, 404);
+
         $this->authorizeUserManagement($this->user);
 
         $this->email = Str::lower($this->email);
@@ -52,14 +64,23 @@ class Edit extends Component
 
         $this->user->save();
 
-        Flux::toast(variant: 'success', text: __('User updated.'));
+        $this->showModal = false;
 
-        $this->redirectRoute('users.index', navigate: true);
+        $this->dispatch('user-updated');
+
+        Flux::toast(variant: 'success', text: __('User updated.'));
     }
 
     public function render(): View
     {
         return view('livewire.users.edit');
+    }
+
+    private function fillFrom(User $user): void
+    {
+        $this->user = $user;
+        $this->name = $user->name;
+        $this->email = $user->email;
     }
 
     private function authorizeUserManagement(User $user): void

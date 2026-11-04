@@ -1,24 +1,34 @@
-<div class="flex w-full flex-1 flex-col gap-6">
-    <div class="flex items-start justify-between gap-4">
-        <div class="relative w-full">
-            <flux:heading size="xl" level="1">{{ __('Edit user') }}</flux:heading>
-            <flux:subheading>{{ $user->name }}</flux:subheading>
-        </div>
-    </div>
+<div>
+    <flux:modal
+        wire:model.self="showModal"
+        class="md:w-96"
+        x-init="$el.querySelector('dialog')?.setAttribute('aria-labelledby', 'edit-user-heading')"
+    >
+        <form wire:submit="update" class="space-y-6">
+            <div>
+                <flux:heading id="edit-user-heading" size="lg">{{ __('Edit user') }}</flux:heading>
+                <flux:subheading>{{ $user?->name }}</flux:subheading>
+            </div>
 
-    <flux:separator variant="subtle" />
+            <flux:field>
+                <flux:label>{{ __('Name') }}</flux:label>
+                <flux:input wire:model="name" type="text" required autofocus autocomplete="name" />
+                <flux:error name="name" />
+            </flux:field>
 
-    <form wire:submit="update" class="w-full max-w-lg space-y-6">
-        <flux:input wire:model="name" :label="__('Name')" type="text" required autofocus autocomplete="name" />
+            <flux:field>
+                <flux:label>{{ __('Email') }}</flux:label>
+                <flux:input wire:model="email" type="email" required autocomplete="email" />
+                <flux:error name="email" />
+            </flux:field>
 
-        <flux:input wire:model="email" :label="__('Email')" type="email" required autocomplete="email" />
+            <div class="flex items-center justify-between">
+                <flux:modal.close>
+                    <flux:button variant="subtle">{{ __('Cancel') }}</flux:button>
+                </flux:modal.close>
 
-        <div class="flex items-center gap-4">
-            <flux:button variant="primary" type="submit">{{ __('Save') }}</flux:button>
-
-            <flux:button :href="route('users.index')" variant="ghost" wire:navigate>
-                {{ __('Cancel') }}
-            </flux:button>
-        </div>
-    </form>
+                <flux:button variant="primary" type="submit">{{ __('Save') }}</flux:button>
+            </div>
+        </form>
+    </flux:modal>
 </div>
