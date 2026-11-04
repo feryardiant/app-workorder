@@ -10,7 +10,7 @@ use App\Models\User;
 use App\Notifications\VerifyEmailForNewUser;
 use Flux\Flux;
 use Illuminate\Contracts\View\View;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
@@ -36,7 +36,7 @@ class Index extends Component
 
     public function createUser(): void
     {
-        $actor = auth()->user();
+        $actor = Auth::user();
 
         abort_unless($actor instanceof User && $actor->role->canManageUsers(), 403);
 
@@ -86,7 +86,7 @@ class Index extends Component
 
     public function deleteUser(User $user): void
     {
-        $actor = auth()->user();
+        $actor = Auth::user();
 
         abort_unless($actor instanceof User && $actor->role->canManageUsers(), 403);
         abort_if($user->is($actor), 403);
@@ -103,7 +103,7 @@ class Index extends Component
     #[Computed]
     public function roles(): array
     {
-        $actor = auth()->user();
+        $actor = Auth::user();
 
         return $actor instanceof User && $actor->role->isOwner()
             ? Role::cases()

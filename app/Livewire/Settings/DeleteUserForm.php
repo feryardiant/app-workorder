@@ -24,6 +24,7 @@ class DeleteUserForm extends Component
             'password' => $this->currentPasswordRules(),
         ]);
 
+        /** @disregard P1013 */
         tap(Auth::user(), $logout(...))->delete();
 
         $this->redirect('/', navigate: true);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Settings;
 
 use App\Concerns\PasswordValidationRules;
+use App\Models\User;
 use Exception;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
@@ -61,11 +62,14 @@ class Security extends Component
         $this->canManageTwoFactor = Features::canManageTwoFactorAuthentication();
 
         if ($this->canManageTwoFactor) {
-            if (Fortify::confirmsTwoFactorAuthentication() && \is_null(auth()->user()->two_factor_confirmed_at)) {
-                $disableTwoFactorAuthentication(auth()->user());
+            /** @var User */
+            $user = Auth::user();
+
+            if (Fortify::confirmsTwoFactorAuthentication() && \is_null($user->two_factor_confirmed_at)) {
+                $disableTwoFactorAuthentication($user);
             }
 
-            $this->twoFactorEnabled = auth()->user()->hasEnabledTwoFactorAuthentication();
+            $this->twoFactorEnabled = $user->hasEnabledTwoFactorAuthentication();
             $this->requiresConfirmation = Features::optionEnabled(Features::twoFactorAuthentication(), 'confirm');
         }
 
@@ -87,7 +91,10 @@ class Security extends Component
             throw $e;
         }
 
-        Auth::user()->update([
+        /** @var User */
+        $user = Auth::user();
+
+        $user->update([
             'password' => $validated['password'],
         ]);
 
@@ -101,10 +108,12 @@ class Security extends Component
      */
     public function enable(EnableTwoFactorAuthentication $enableTwoFactorAuthentication): void
     {
-        $enableTwoFactorAuthentication(auth()->user());
+        /** @var User */
+        $user = Auth::user();
+        $enableTwoFactorAuthentication($user);
 
         if (! $this->requiresConfirmation) {
-            $this->twoFactorEnabled = auth()->user()->hasEnabledTwoFactorAuthentication();
+            $this->twoFactorEnabled = $user->hasEnabledTwoFactorAuthentication();
         }
 
         $this->loadSetupData();
@@ -117,10 +126,11 @@ class Security extends Component
      */
     private function loadSetupData(): void
     {
-        $user = auth()->user();
+        /** @var User */
+        $user = Auth::user();
 
         try {
-            $this->qrCodeSvg = $user?->twoFactorQrCodeSvg();
+            $this->qrCodeSvg = $user->twoFactorQrCodeSvg();
             $this->manualSetupKey = decrypt($user->two_factor_secret);
         } catch (Exception) {
             $this->addError('setupData', 'Failed to fetch setup data.');
@@ -152,7 +162,7 @@ class Security extends Component
     {
         $this->validate();
 
-        $confirmTwoFactorAuthentication(auth()->user(), $this->code);
+        $confirmTwoFactorAuthentication(Auth::user(), $this->code);
 
         $this->closeModal();
 
@@ -174,7 +184,7 @@ class Security extends Component
      */
     public function disable(DisableTwoFactorAuthentication $disableTwoFactorAuthentication): void
     {
-        $disableTwoFactorAuthentication(auth()->user());
+        $disableTwoFactorAuthentication(Auth::user());
 
         $this->twoFactorEnabled = false;
     }
@@ -195,7 +205,9 @@ class Security extends Component
         $this->resetErrorBag();
 
         if (! $this->requiresConfirmation) {
-            $this->twoFactorEnabled = auth()->user()->hasEnabledTwoFactorAuthentication();
+            /** @var User */
+            $user = Auth::user();
+            $this->twoFactorEnabled = $user->hasEnabledTwoFactorAuthentication();
         }
     }
 

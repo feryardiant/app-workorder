@@ -8,6 +8,7 @@ use App\Concerns\ProfileValidationRules;
 use App\Models\User;
 use Flux\Flux;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -63,7 +64,7 @@ class Edit extends Component
 
     private function authorizeUserManagement(User $user): void
     {
-        $actor = auth()->user();
+        $actor = Auth::user();
 
         abort_unless($actor instanceof User && $actor->role->canManageUsers(), 403);
         abort_if($user->role->isOwner() && ! $actor->role->isOwner(), 403);

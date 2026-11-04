@@ -13,7 +13,7 @@
         },
         "PHP": {
             "document_symbols": "on",
-            "language_servers": ["laravel", "!intelephense", "phpantom", "!phptools", "!phpactor", "..."]
+            "language_servers": ["laravel", "intelephense", "!phpantom", "!phptools", "!phpactor", "..."]
         },
         "CSS": {
             "language_servers": ["tailwindcss-intellisense-css", "!vscode-css-language-server", "..."],
