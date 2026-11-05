@@ -132,7 +132,7 @@
                                         @class([
                                             'relative inline-flex ml-1 size-8 shrink-0 items-center justify-center transition-opacity',
                                             'opacity-0' => $isSelected,
-                                            'group-hover/row:opacity-0 group-focus-within/row:opacity-0' => ! $isSelected && $canManageUser,
+                                            'group-hover/row:opacity-0 group-focus-within/row:opacity-0 [@media(hover:none)]:opacity-0' => ! $isSelected && $canManageUser,
                                         ])
                                         aria-hidden="true"
                                     >
@@ -147,13 +147,13 @@
                                 @endif
 
                                 @if ($canManageUser)
-                                    <span class="absolute left-1 top-1/2 z-10 flex size-8 -translate-y-1/2 items-center justify-center">
+                                    <span class="absolute left-0 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center">
                                         <flux:checkbox
                                             value="{{ $user->id }}"
                                             :aria-label="__('Select :name', ['name' => $user->name])"
                                             @class([
                                                 'transition-opacity',
-                                                'opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100' => ! $isSelected,
+                                                'pointer-events-none opacity-0 group-hover/row:pointer-events-auto group-hover/row:opacity-100 group-focus-within/row:pointer-events-auto group-focus-within/row:opacity-100 [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100' => ! $isSelected,
                                             ])
                                         />
                                     </span>

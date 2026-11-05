@@ -46,6 +46,22 @@
   ::file-selector-button {
     border-color: var(--color-gray-200, currentColor);
   }
+
+  button:not(:disabled):not([aria-disabled='true']),
+  [role='button']:not([aria-disabled='true']),
+  [role='menuitem']:not([aria-disabled='true']),
+  [role='checkbox']:not([aria-disabled='true']):not([disabled]),
+  [role='switch']:not([aria-disabled='true']):not([disabled]),
+  summary {
+    cursor: pointer;
+  }
+
+  /* Popovers and their wrappers are not clickable; only their items are. */
+  [data-flux-dropdown],
+  [data-flux-menu],
+  [role='menu'] {
+    cursor: default;
+  }
 }
 
 [data-flux-field]:not(ui-radio, ui-checkbox) {

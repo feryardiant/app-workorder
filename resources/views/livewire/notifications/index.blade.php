@@ -93,7 +93,7 @@
                                         'text-sky-500' => $isUnread,
                                         'text-zinc-400' => ! $isUnread,
                                         'opacity-0' => $isSelected,
-                                        'transition-opacity group-hover:opacity-0 group-focus-within:opacity-0' => ! $isSelected,
+                                        'transition-opacity group-hover:opacity-0 group-focus-within:opacity-0 [@media(hover:none)]:opacity-0' => ! $isSelected,
                                     ])
                                 />
 
@@ -104,11 +104,11 @@
                                     aria-label="{{ __('Select notification') }}: {{ $notification->data['title'] ?? '' }} ({{ $isUnread ? __('Unread') : __('Read') }})"
                                     wire:click.stop="toggleSelected('{{ $notification->id }}')"
                                     @class([
-                                        'absolute inset-0 z-10 flex items-center justify-center rounded-[.3rem] border transition-opacity',
+                                        "before:absolute before:-inset-2 before:content-[''] absolute inset-0 z-10 flex items-center justify-center rounded-[.3rem] border transition-opacity",
                                         'border-sky-500 bg-sky-500 text-white' => $isSelected,
                                         'border-zinc-300 bg-white dark:border-zinc-600 dark:bg-zinc-800' => ! $isSelected,
                                         'pointer-events-auto opacity-100' => $isSelected,
-                                        'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500' => ! $isSelected,
+                                        'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500 [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100' => ! $isSelected,
                                     ])
                                 >
                                     @if ($isSelected)
