@@ -1,7 +1,7 @@
 @php($unreadNotifications = auth()->user()->unreadNotifications()->count())
 
 <div
-    class="contents"
+    {{ $attributes }}
     x-data="{ unread: {{ $unreadNotifications }} }"
     @notifications-updated.window="unread = $event.detail.count"
 >

@@ -168,7 +168,9 @@ test('email verification notifications are stored in the database', function () 
 
     expect($notification->type)->toBe(VerifyEmailForNewUser::class)
         ->and($notification->data['title'])->toBe(__('Verify your email address'))
+        ->and($notification->data['greeting'])->toBe(__('Hello!'))
         ->and($notification->data['description'])->toBe(__('Please click the button below to verify your email address.'))
         ->and($notification->data['action']['label'])->toBe(__('Verify email address'))
-        ->and($notification->data['action']['url'])->toBeString();
+        ->and($notification->data['action']['url'])->toBeString()
+        ->and($notification->data['salutation'])->toBe(__('Regards, :app', ['app' => config('app.name')]));
 });

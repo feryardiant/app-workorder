@@ -6,11 +6,11 @@
         </div>
 
         @if (count($selectedNotifications) > 0)
-            <flux:button.group class="shrink-0 self-start">
-                <flux:button icon="envelope-open" wire:click="markSelectedAsRead">
+            <flux:button.group class="shrink-0 self-start max-sm:flex-wrap">
+                <flux:button icon="envelope-open" wire:click="markSelectedAsRead" class="max-sm:px-2!">
                     {{ __('Mark as read') }}
                 </flux:button>
-                <flux:button icon="envelope" wire:click="markSelectedAsUnread">
+                <flux:button icon="envelope" wire:click="markSelectedAsUnread" class="max-sm:px-2!">
                     {{ __('Mark as unread') }}
                 </flux:button>
             </flux:button.group>
@@ -32,8 +32,9 @@
                         aria-checked="{{ $allSelected ? 'true' : 'false' }}"
                         aria-label="{{ __('Select all notifications') }}"
                         wire:click="toggleSelectAll"
+                        @disabled($pageIds === [])
                         @class([
-                            'flex size-[1.125rem] shrink-0 items-center justify-center rounded-[.3rem] border',
+                            'flex size-[1.125rem] shrink-0 items-center justify-center rounded-[.3rem] border disabled:cursor-not-allowed disabled:opacity-40',
                             'border-sky-500 bg-sky-500 text-white' => $allSelected,
                             'border-zinc-300 dark:border-zinc-600' => ! $allSelected,
                         ])
