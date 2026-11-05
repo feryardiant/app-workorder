@@ -204,6 +204,12 @@
                                             </flux:menu.item>
                                         @endif
 
+                                        @if (! $user->hasVerifiedEmail())
+                                            <flux:menu.item icon="arrow-path" wire:click="resendVerification({{ $user->id }})">
+                                                {{ __('Resend verification') }}
+                                            </flux:menu.item>
+                                        @endif
+
                                         <flux:menu.separator />
 
                                         <flux:menu.item

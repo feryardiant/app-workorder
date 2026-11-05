@@ -103,6 +103,85 @@ test('an admin can edit a user', function () {
         ->email_verified_at->toBeNull();
 });
 
+test('an admin can resend verification to an unverified user', function () {
+    Notification::fake();
+
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $user = User::factory()->unverified()->create();
+
+    Livewire::test(Index::class)
+        ->call('resendVerification', $user->id)
+        ->assertHasNoErrors();
+
+    Notification::assertSentTo($user, VerifyEmailForNewUser::class);
+});
+
+test('verification cannot be resent to a verified user', function () {
+    Notification::fake();
+
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $user = User::factory()->create();
+
+    Livewire::test(Index::class)
+        ->call('resendVerification', $user->id)
+        ->assertStatus(422);
+
+    Notification::assertNotSentTo($user, VerifyEmailForNewUser::class);
+});
+
+test('an owner can resend verification to a manageable user', function () {
+    Notification::fake();
+
+    actingAs(User::factory()->withRole(Role::Owner)->create());
+    $user = User::factory()->unverified()->create();
+
+    Livewire::test(Index::class)
+        ->call('resendVerification', $user->id)
+        ->assertHasNoErrors();
+
+    Notification::assertSentTo($user, VerifyEmailForNewUser::class);
+});
+
+test('an admin cannot resend verification to an owner', function () {
+    Notification::fake();
+
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $owner = User::factory()->withRole(Role::Owner)->unverified()->create();
+
+    Livewire::test(Index::class)
+        ->call('resendVerification', $owner->id)
+        ->assertForbidden();
+
+    Notification::assertNotSentTo($owner, VerifyEmailForNewUser::class);
+});
+
+test('a member cannot resend verification', function () {
+    Notification::fake();
+
+    actingAs(User::factory()->withRole(Role::Member)->create());
+    $user = User::factory()->unverified()->create();
+
+    Livewire::test(Index::class)
+        ->call('resendVerification', $user->id)
+        ->assertForbidden();
+
+    Notification::assertNotSentTo($user, VerifyEmailForNewUser::class);
+});
+
+test('the resend verification action only appears for unverified users to managers', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+
+    User::factory()->unverified()->create();
+    User::factory()->withRole(Role::Owner)->unverified()->create();
+    User::factory()->create();
+
+    expect(substr_count(Livewire::test(Index::class)->html(), __('Resend verification')))->toBe(1);
+
+    actingAs(User::factory()->withRole(Role::Member)->create(), 'web');
+
+    expect(substr_count(Livewire::test(Index::class)->html(), __('Resend verification')))->toBe(0);
+});
+
 test('editing to a mixed-case duplicate email fails validation', function () {
     actingAs(User::factory()->withRole(Role::Admin)->create());
     User::factory()->create(['email' => 'taken@example.com']);

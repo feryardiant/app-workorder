@@ -124,6 +124,22 @@ class Index extends Component
         $this->dispatch('edit-user', userId: $user->id);
     }
 
+    public function resendVerification(User $user): void
+    {
+        $actor = Auth::user();
+
+        abort_unless($actor instanceof User && $actor->role->canManageUsers(), 403);
+        abort_if($user->hasVerifiedEmail(), 422);
+        abort_if($user->role->isOwner() && ! $actor->role->isOwner(), 403);
+
+        $user->notify(new VerifyEmailForNewUser);
+
+        Flux::toast(
+            variant: 'success',
+            text: __('Verification email resent to :email.', ['email' => $user->email]),
+        );
+    }
+
     public function confirmPromote(User $user): void
     {
         $this->roleChangeUserId = $user->id;
