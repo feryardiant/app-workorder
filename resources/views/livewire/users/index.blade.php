@@ -47,7 +47,24 @@
                 <flux:table.column>
                     <span class="inline-flex items-center gap-2">
                         @if ($canManageUsers)
-                            <flux:checkbox.all :aria-label="__('Select all users')" />
+                            <span class="relative inline-flex shrink-0 items-center justify-center">
+                                <input
+                                    type="checkbox"
+                                    wire:change="toggleSelectAll"
+                                    @checked($allSelected)
+                                    x-init="const el = $el; const syncIndeterminate = () => el.indeterminate = $wire.someSelected; syncIndeterminate(); $wire.$watch('someSelected', syncIndeterminate)"
+                                    aria-label="{{ __('Select all users') }}"
+                                    class="peer size-[1.125rem] cursor-pointer appearance-none rounded-[.3rem] border border-zinc-300 bg-white shadow-xs outline-offset-2 checked:border-zinc-800 checked:bg-zinc-800 indeterminate:border-zinc-800 indeterminate:bg-zinc-800 dark:border-white/10 dark:bg-white/10 dark:checked:border-white dark:checked:bg-white dark:indeterminate:border-white dark:indeterminate:bg-white"
+                                />
+
+                                <svg class="pointer-events-none absolute hidden size-[.6rem] text-white peer-checked:block dark:text-zinc-800" viewBox="0 0 12 10" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <path d="M1 5 4.5 8.5 11 1" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+
+                                <svg class="pointer-events-none absolute hidden h-0.5 w-[.55rem] rounded-full bg-white peer-indeterminate:block dark:bg-zinc-800" viewBox="0 0 10 2" fill="currentColor" aria-hidden="true">
+                                    <rect width="10" height="2" rx="1" />
+                                </svg>
+                            </span>
                         @endif
 
                         {{ __('Name') }}
@@ -76,44 +93,45 @@
 
                     <flux:table.row
                         :key="$user->id"
-                        tabindex="0"
-                        role="link"
-                        :aria-label="__('View :name', ['name' => $user->name])"
-                        class="group/row cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-400 {{ $isCurrentUser ? 'bg-zinc-100/60 dark:bg-zinc-700/30' : '' }}"
+                        class="group/row cursor-pointer {{ $isCurrentUser ? 'bg-zinc-100/60 dark:bg-zinc-700/30' : '' }}"
                         x-on:click="if (! $event.target.closest('a, button, input, ui-checkbox, ui-dropdown')) window.Livewire.navigate('{{ route('users.show', $user) }}')"
-                        x-on:keydown.enter="if ($event.target === $el) window.Livewire.navigate('{{ route('users.show', $user) }}')"
                     >
                         <flux:table.cell class="w-7/12">
-                            <span class="inline-flex items-center gap-2">
-                                @if ($canManageUser)
-                                    <span class="relative inline-flex size-8 shrink-0 items-center justify-center">
-                                        <flux:avatar
-                                            size="sm"
-                                            :initials="$user->initials()"
-                                            @class([
-                                                'transition-opacity',
-                                                'opacity-0' => $isSelected,
-                                                'group-hover/row:opacity-0 group-focus-within/row:opacity-0' => ! $isSelected,
-                                            ])
-                                        />
+                            <span class="relative inline-flex items-center gap-2">
+                                <a
+                                    href="{{ route('users.show', $user) }}"
+                                    wire:navigate
+                                    class="inline-flex items-center gap-2 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-900"
+                                >
+                                    <span
+                                        @class([
+                                            'relative inline-flex size-8 shrink-0 items-center justify-center transition-opacity',
+                                            'opacity-0' => $isSelected,
+                                            'group-hover/row:opacity-0 group-focus-within/row:opacity-0' => ! $isSelected,
+                                        ])
+                                        aria-hidden="true"
+                                    >
+                                        <flux:avatar size="sm" :initials="$user->initials()" />
+                                    </span>
 
+                                    {{ $user->name }}
+                                </a>
+
+                                @if ($isCurrentUser)
+                                    <flux:badge size="sm" color="zinc">{{ __('You') }}</flux:badge>
+                                @endif
+
+                                @if ($canManageUser)
+                                    <span class="absolute left-0 top-1/2 z-10 -translate-y-1/2">
                                         <flux:checkbox
                                             value="{{ $user->id }}"
                                             :aria-label="__('Select :name', ['name' => $user->name])"
                                             @class([
-                                                'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transition-opacity',
+                                                'transition-opacity',
                                                 'opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100' => ! $isSelected,
                                             ])
                                         />
                                     </span>
-                                @else
-                                    <flux:avatar size="sm" :initials="$user->initials()" />
-                                @endif
-
-                                {{ $user->name }}
-
-                                @if ($isCurrentUser)
-                                    <flux:badge size="sm" color="zinc">{{ __('You') }}</flux:badge>
                                 @endif
                             </span>
                         </flux:table.cell>

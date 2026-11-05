@@ -359,6 +359,72 @@ test('a member cannot remove selected users', function () {
     expect(User::query()->whereKey($users->pluck('id'))->count())->toBe(2);
 });
 
+test('an admin cannot bulk delete themselves or an owner', function () {
+    $admin = User::factory()->withRole(Role::Admin)->create();
+    $owner = User::factory()->withRole(Role::Owner)->create();
+
+    actingAs($admin);
+
+    Livewire::test(Index::class)
+        ->set('selected', [$admin->id])
+        ->call('deleteSelected')
+        ->assertForbidden();
+
+    expect($admin->fresh())->not->toBeNull();
+
+    Livewire::test(Index::class)
+        ->set('selected', [$owner->id])
+        ->call('deleteSelected')
+        ->assertForbidden();
+
+    expect($owner->fresh())->not->toBeNull();
+});
+
+test('the table exposes selectable rows to managers only', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    User::factory()->create(['name' => 'Selectable User']);
+
+    Livewire::test(Index::class)
+        ->assertSeeHtml('aria-label="Pilih semua pengguna"')
+        ->assertSeeHtml('aria-label="Pilih Selectable User"');
+
+    actingAs(User::factory()->withRole(Role::Member)->create(), 'web');
+
+    Livewire::test(Index::class)
+        ->assertDontSee('Pilih semua pengguna')
+        ->assertDontSee('Pilih Selectable User');
+});
+
+test('the header selection state reflects the selectable rows', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $users = User::factory()->count(2)->create();
+
+    Livewire::test(Index::class)
+        ->assertSet('allSelected', false)
+        ->assertSet('someSelected', false)
+        ->set('selected', [$users->first()->id])
+        ->assertSet('allSelected', false)
+        ->assertSet('someSelected', true)
+        ->set('selected', $users->pluck('id')->all())
+        ->assertSet('allSelected', true)
+        ->assertSet('someSelected', false);
+});
+
+test('the select all checkbox toggles the selectable rows', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $users = User::factory()->count(2)->create();
+
+    Livewire::test(Index::class)
+        ->call('toggleSelectAll')
+        ->assertSet('selected', $users->pluck('id')->all())
+        ->assertSet('allSelected', true)
+        ->assertSet('someSelected', false)
+        ->call('toggleSelectAll')
+        ->assertSet('selected', [])
+        ->assertSet('allSelected', false)
+        ->assertSet('someSelected', false);
+});
+
 test('selecting a row is cleared when the page changes', function () {
     actingAs(User::factory()->create());
     User::factory()->count(14)->create();
@@ -382,21 +448,41 @@ test('users are ordered by creation date newest first', function () {
 });
 
 test('the created at column can be sorted', function () {
-    actingAs(User::factory()->create());
+    $actor = User::factory()->create(['created_at' => now()->subDays(5)]);
+    $older = User::factory()->create(['created_at' => now()->subDay()]);
+    $newer = User::factory()->create(['created_at' => now()]);
+
+    actingAs($actor);
 
     Livewire::test(Index::class)
         ->call('sortByCreatedAt')
         ->assertSet('sortDirection', 'asc')
+        ->assertViewHas('users', fn ($users) => $users->pluck('id')->all() === [$actor->id, $older->id, $newer->id])
         ->call('sortByCreatedAt')
-        ->assertSet('sortDirection', 'desc');
+        ->assertSet('sortDirection', 'desc')
+        ->assertViewHas('users', fn ($users) => $users->pluck('id')->all() === [$newer->id, $older->id, $actor->id]);
 });
 
-test('the edit user modal is a flyout', function () {
+test('sorting returns to the first page', function () {
+    actingAs(User::factory()->create());
+    User::factory()->count(14)->create();
+
+    Livewire::test(Index::class)
+        ->call('gotoPage', 2)
+        ->call('sortByCreatedAt')
+        ->assertViewHas('users', fn ($users) => $users->currentPage() === 1);
+});
+
+test('the edit user modal is a floating right-side flyout with a bottom footer', function () {
     actingAs(User::factory()->withRole(Role::Admin)->create());
     $user = User::factory()->create();
 
     Livewire::test(Edit::class, ['user' => $user])
-        ->assertSeeHtml('data-flux-flyout');
+        ->assertSeeHtml('data-flux-flyout')
+        ->assertSeeHtml('ml-auto')
+        ->assertSeeHtml('rounded-xl')
+        ->assertSeeHtml('min-h-[calc(100dvh-5rem)]')
+        ->assertSeeHtml('mt-auto');
 });
 
 test('a member cannot edit or remove users', function () {

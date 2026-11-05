@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Notifications\VerifyEmailForNewUser;
 use Flux\Flux;
 use Illuminate\Contracts\View\View;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -22,6 +23,9 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use Throwable;
 
+/**
+ * @property-read LengthAwarePaginator<int, User> $users
+ */
 #[Title('Users')]
 class Index extends Component
 {
@@ -51,6 +55,10 @@ class Index extends Component
     public array $selected = [];
 
     public int $selectionKey = 0;
+
+    public bool $allSelected = false;
+
+    public bool $someSelected = false;
 
     /**
      * @var 'asc'|'desc'
@@ -233,6 +241,27 @@ class Index extends Component
     public function updatedPage(): void
     {
         $this->selected = [];
+        $this->allSelected = false;
+        $this->someSelected = false;
+    }
+
+    public function updatedSelected(): void
+    {
+        $pageIds = $this->selectablePageIds();
+        $selected = array_map('intval', $this->selected);
+
+        $this->allSelected = $pageIds !== [] && array_diff($pageIds, $selected) === [];
+        $this->someSelected = ! $this->allSelected && array_intersect($pageIds, $selected) !== [];
+    }
+
+    public function toggleSelectAll(): void
+    {
+        $pageIds = $this->selectablePageIds();
+        $selected = array_map('intval', $this->selected);
+
+        $this->selected = array_diff($pageIds, $selected) === [] ? [] : $pageIds;
+        $this->selectionKey++;
+        $this->updatedSelected();
     }
 
     public function sortByCreatedAt(): void
@@ -268,7 +297,7 @@ class Index extends Component
             $deleted = false;
         }
 
-        $this->reset('selected');
+        $this->reset('selected', 'allSelected', 'someSelected');
         $this->selectionKey++;
         $this->resetPage();
 
@@ -287,10 +316,36 @@ class Index extends Component
     public function render(): View
     {
         return view('livewire.users.index', [
-            'users' => User::query()
-                ->orderBy('created_at', $this->sortDirection)
-                ->orderBy('id')
-                ->paginate(10),
+            'users' => $this->users,
         ]);
+    }
+
+    /**
+     * @return LengthAwarePaginator<int, User>
+     */
+    #[Computed]
+    public function users(): LengthAwarePaginator
+    {
+        return User::query()
+            ->orderBy('created_at', $this->sortDirection)
+            ->orderBy('id')
+            ->paginate(10);
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    private function selectablePageIds(): array
+    {
+        $actor = Auth::user();
+
+        if (! $actor instanceof User || ! $actor->role->canManageUsers()) {
+            return [];
+        }
+
+        return $this->users
+            ->filter(fn (User $user): bool => ! $user->is($actor) && ($actor->role->isOwner() || ! $user->role->isOwner()))
+            ->pluck('id')
+            ->all();
     }
 }
