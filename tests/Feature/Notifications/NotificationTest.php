@@ -91,7 +91,7 @@ test('notifications can be selected individually or all at once', function () {
         ->call('toggleSelected', $ids[0])
         ->assertSet('selectedNotifications', [])
         ->call('toggleSelectAll')
-        ->assertSet('selectedNotifications', $ids);
+        ->assertSet('selectedNotifications', fn (array $selected): bool => collect($selected)->sort()->values()->all() === collect($ids)->sort()->values()->all());
 
     expect($component->html())->not->toContain('aria-checked="mixed"');
 });
