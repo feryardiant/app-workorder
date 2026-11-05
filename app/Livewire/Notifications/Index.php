@@ -7,6 +7,7 @@ namespace App\Livewire\Notifications;
 use App\Models\User;
 use Flux\Flux;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
@@ -29,6 +30,17 @@ class Index extends Component
      * @var array<int, string>
      */
     public array $selectedNotifications = [];
+
+    public function mount(Request $request): void
+    {
+        $open = $request->query('open');
+
+        if (! \is_string($open)) {
+            return;
+        }
+
+        $this->openNotification($open);
+    }
 
     public function sortByReceivedAt(): void
     {

@@ -12,6 +12,8 @@ use Livewire\Livewire;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
+use function Pest\Laravel\getJson;
+use function Pest\Laravel\postJson;
 
 test('guests are redirected from the notifications page', function () {
     get(route('notifications.index'))->assertRedirect(route('login'));
@@ -48,6 +50,68 @@ test('the user menu links to the notifications page and shows the unread count',
     expect($html)->toContain(route('notifications.index'))
         ->toContain('notifications-updated.window')
         ->toContain('bg-red-500');
+});
+
+test('guests cannot poll for notifications', function () {
+    getJson(route('notifications.latest'))->assertUnauthorized();
+    postJson(route('notifications.latest.ack'))->assertUnauthorized();
+});
+
+test('the notification poller reports only new unread notifications', function () {
+    $user = User::factory()->create();
+    $actor = User::factory()->create();
+
+    actingAs($user);
+
+    $user->notify(new UserRoleChangedNotification($actor, Role::Admin));
+    $first = $user->notifications()->firstOrFail();
+
+    getJson(route('notifications.latest'))
+        ->assertOk()
+        ->assertJsonPath('notification', null)
+        ->assertJsonPath('pending', [])
+        ->assertJsonPath('count', 1);
+
+    $user->notify(new UserRoleChangedNotification($actor, Role::Member));
+    $newest = $user->notifications()->whereKeyNot($first->id)->firstOrFail();
+
+    getJson(route('notifications.latest'))
+        ->assertOk()
+        ->assertJsonPath('notification.id', $newest->id)
+        ->assertJsonPath('notification.url', route('notifications.index', ['open' => $newest->id]))
+        ->assertJsonPath('pending', [$newest->id])
+        ->assertJsonPath('text', $newest->data['description'])
+        ->assertJsonPath('linkLabel', __('Open notification'))
+        ->assertJsonPath('closeLabel', __('Close notification'))
+        ->assertJsonPath('count', 2);
+
+    getJson(route('notifications.latest'))
+        ->assertOk()
+        ->assertJsonPath('notification.id', $newest->id);
+
+    postJson(route('notifications.latest.ack'), ['ids' => [$newest->id]])->assertOk();
+
+    getJson(route('notifications.latest'))
+        ->assertOk()
+        ->assertJsonPath('notification', null)
+        ->assertJsonPath('pending', [])
+        ->assertJsonPath('count', 2);
+});
+
+test('the open parameter marks the notification read', function () {
+    $user = User::factory()->create();
+
+    actingAs($user);
+
+    $user->notify(new UserRoleChangedNotification(User::factory()->create(), Role::Admin));
+
+    $notification = $user->notifications()->firstOrFail();
+
+    get(route('notifications.index', ['open' => $notification->id]))
+        ->assertOk()
+        ->assertSee(__('Your role at :app has changed', ['app' => config('app.name')]));
+
+    expect($notification->refresh()->read_at)->not->toBeNull();
 });
 
 test('opening a notification shows its content in a modal', function () {

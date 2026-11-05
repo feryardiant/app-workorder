@@ -4,6 +4,14 @@
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-white dark:bg-zinc-800">
+        <div
+            data-notification-poller
+            data-url="{{ route('notifications.latest') }}"
+            data-ack-url="{{ route('notifications.latest.ack') }}"
+            data-csrf="{{ csrf_token() }}"
+            hidden
+        ></div>
+
         <flux:sidebar sticky collapsible="mobile" class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
             <flux:sidebar.header>
                 <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
