@@ -11,12 +11,15 @@ use App\Models\User;
 use App\Notifications\UserRoleChangedNotification;
 use App\Notifications\VerifyEmailForNewUser;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
+use Tests\TestCase;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
@@ -690,3 +693,68 @@ test('a new user email cannot be verified with an invalid hash', function () {
 
     expect($user->fresh()->hasVerifiedEmail())->toBeFalse();
 });
+
+describe('database session cleanup on user deletion', function () {
+    beforeEach(function () {
+        /** @var TestCase $this */
+        $this->sessionConnection = config('database.default');
+        $this->sessionTable = 'test_sessions';
+
+        config([
+            'session.driver' => 'database',
+            'session.connection' => $this->sessionConnection,
+            'session.table' => $this->sessionTable,
+        ]);
+
+        Schema::connection($this->sessionConnection)->dropIfExists($this->sessionTable);
+
+        (require database_path('migrations/0001_01_01_000002_create_sessions_table.php'))->up();
+    });
+
+    afterEach(function () {
+        /** @var TestCase $this */
+        Schema::connection($this->sessionConnection)->dropIfExists($this->sessionTable);
+    });
+
+    test('individual user deletion removes their database sessions', function () {
+        actingAs(User::factory()->withRole(Role::Admin)->create());
+        $member = User::factory()->withRole(Role::Member)->create();
+
+        createTestDatabaseSessionFor($member);
+
+        Livewire::test(Index::class)->call('deleteUser', $member->id);
+
+        /** @var TestCase $this */
+        expect($member->fresh())->toBeNull()
+            ->and(DB::connection($this->sessionConnection)->table($this->sessionTable)->where('user_id', $member->id)->exists())->toBeFalse();
+    });
+
+    test('batch user deletion removes database sessions for every deleted user', function () {
+        actingAs(User::factory()->withRole(Role::Admin)->create());
+        $members = User::factory()->count(2)->withRole(Role::Member)->create();
+
+        foreach ($members as $member) {
+            createTestDatabaseSessionFor($member);
+        }
+
+        Livewire::test(Index::class)
+            ->set('selected', $members->pluck('id')->all())
+            ->call('deleteSelected');
+
+        /** @var TestCase $this */
+        expect(User::query()->whereKey($members->pluck('id'))->count())->toBe(0)
+            ->and(DB::connection($this->sessionConnection)->table($this->sessionTable)->whereIn('user_id', $members->pluck('id'))->count())->toBe(0);
+    });
+});
+
+function createTestDatabaseSessionFor(User $user): void
+{
+    DB::connection(config('database.default'))->table(config('session.table'))->insert([
+        'id' => Str::random(40),
+        'user_id' => $user->id,
+        'ip_address' => '127.0.0.1',
+        'user_agent' => 'Pest',
+        'payload' => base64_encode(serialize([])),
+        'last_activity' => now()->getTimestamp(),
+    ]);
+}
