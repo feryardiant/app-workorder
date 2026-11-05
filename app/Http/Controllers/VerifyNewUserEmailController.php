@@ -25,7 +25,10 @@ class VerifyNewUserEmailController extends Controller
         );
 
         if ($user->hasVerifiedEmail()) {
-            return redirect()->route('login');
+            return redirect()->route('login')->with(
+                'status',
+                __('This invitation has already been used. Use the "Forgot your password?" link to set your password.'),
+            );
         }
 
         $user->markEmailAsVerified();

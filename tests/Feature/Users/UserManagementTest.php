@@ -528,7 +528,9 @@ test('a verified user cannot get a password reset token from a verification link
         ['id' => $user->id, 'hash' => sha1($user->email)],
     );
 
-    get($url)->assertRedirect(route('login'));
+    get($url)
+        ->assertRedirect(route('login'))
+        ->assertSessionHas('status', __('This invitation has already been used. Use the "Forgot your password?" link to set your password.'));
 
     expect(DB::table('password_reset_tokens')->where('email', $user->email)->exists())->toBeFalse();
 });
