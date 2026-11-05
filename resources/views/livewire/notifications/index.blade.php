@@ -139,7 +139,9 @@
             @php($data = $this->selectedNotification->data)
 
             <div class="space-y-6">
-                <flux:heading size="lg" class="pe-8">{{ $data['title'] ?? '' }}</flux:heading>
+                <flux:heading size="lg" class="pe-8" data-notification-modal-title>
+                    {{ $data['title'] ?? '' }}
+                </flux:heading>
 
                 <div class="space-y-3 text-sm">
                     @if (! empty($data['greeting']))

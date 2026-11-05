@@ -53,6 +53,31 @@ class Index extends Component
         $this->showNotificationModal = true;
 
         $this->dispatchUnreadCount();
+
+        $this->js(<<<'JS'
+            const focusNotificationModal = () => {
+                const dialog = document.querySelector('dialog[data-flux-flyout][open]');
+
+                if (! dialog) {
+                    return false;
+                }
+
+                const title = dialog.querySelector('[data-notification-modal-title]');
+
+                if (title) {
+                    title.id ||= 'notification-modal-title';
+                    dialog.setAttribute('aria-labelledby', title.id);
+                }
+
+                dialog.querySelector('[data-flux-modal-close] button')?.focus();
+
+                return true;
+            };
+
+            if (! focusNotificationModal()) {
+                setTimeout(focusNotificationModal, 60);
+            }
+        JS);
     }
 
     public function toggleSelected(string $id): void
