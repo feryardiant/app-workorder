@@ -45,8 +45,14 @@ class Index extends Component
     public function sortByReceivedAt(): void
     {
         $this->sortAscending = ! $this->sortAscending;
+        $this->selectedNotifications = [];
 
         $this->resetPage();
+    }
+
+    public function updatedPage(): void
+    {
+        $this->selectedNotifications = [];
     }
 
     public function openNotification(string $id): void

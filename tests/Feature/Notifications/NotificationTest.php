@@ -134,6 +134,28 @@ test('opening a notification shows its content in a modal', function () {
     expect($notification->refresh()->read_at)->not->toBeNull();
 });
 
+test('selection clears when paging or sorting notifications', function () {
+    $user = User::factory()->create();
+    $actor = User::factory()->create();
+
+    foreach (range(1, 11) as $ignored) {
+        $user->notify(new UserRoleChangedNotification($actor, Role::Admin));
+    }
+
+    actingAs($user);
+
+    $id = $user->notifications()->latest()->value('id');
+
+    Livewire::test(Index::class)
+        ->set('selectedNotifications', [$id])
+        ->call('gotoPage', 2)
+        ->assertSet('selectedNotifications', [])
+        ->call('gotoPage', 1)
+        ->set('selectedNotifications', [$id])
+        ->call('sortByReceivedAt')
+        ->assertSet('selectedNotifications', []);
+});
+
 test('notifications can be selected individually or all at once', function () {
     $user = User::factory()->create();
     $actor = User::factory()->create();
