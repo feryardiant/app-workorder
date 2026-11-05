@@ -74,6 +74,17 @@ it('has no serious accessibility issues on the user detail page', function () {
         ->assertNoJavaScriptErrors();
 });
 
+it('exposes the users table sort direction', function () {
+    $owner = User::factory()->withRole(Role::Owner)->create();
+
+    browserLogin($owner)
+        ->navigate('/users')
+        ->assertScript('document.querySelector("[aria-sort]")?.getAttribute("aria-sort") === "descending"')
+        ->click('Terdaftar pada')
+        ->wait(0.4)
+        ->assertScript('document.querySelector("[aria-sort]")?.getAttribute("aria-sort") === "ascending"');
+});
+
 it('focuses the notification flyout and returns focus to its trigger', function () {
     $owner = User::factory()->withRole(Role::Owner)->create();
     $owner->notify(new UserRoleChangedNotification(User::factory()->create(), Role::Admin));

@@ -103,6 +103,7 @@
                     sortable
                     sorted
                     :direction="$sortDirection"
+                    :aria-sort="$sortDirection === 'asc' ? 'ascending' : 'descending'"
                     wire:click="sortByCreatedAt"
                 >
                     {{ __('Registered at') }}
