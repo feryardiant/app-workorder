@@ -54,6 +54,8 @@
     "Enter your email and password below to log in": "Masukkan email dan kata sandi Anda di bawah untuk masuk",
     "Enter your email to receive a password reset link": "Masukkan email Anda untuk menerima tautan atur ulang kata sandi",
     "Failed to delete the selected users.": "Gagal menghapus pengguna terpilih.",
+    "Failed to fetch setup data.": "Gagal mengambil data penyiapan.",
+    "Failed to load recovery codes": "Gagal memuat kode pemulihan.",
     "Forgot password": "Lupa kata sandi",
     "Forgot your password?": "Lupa kata sandi Anda?",
     "Hello!": "Halo!",
