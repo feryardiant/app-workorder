@@ -168,19 +168,13 @@ test('role change notifications are stored in the database', function () {
         ->and($notification->data['description'])->toContain($actor->name);
 });
 
-test('email verification notifications are stored in the database', function () {
+test('email verification notifications are only sent by email', function () {
     $user = User::factory()->unverified()->create();
 
     $user->notify(new VerifyEmailForNewUser);
 
-    $notification = $user->notifications()->firstOrFail();
-
-    expect($notification->type)->toBe(VerifyEmailForNewUser::class)
-        ->and($notification->data['title'])->toBe(__('Verify your email address'))
-        ->and($notification->data['greeting'])->toBe(__('Hello!'))
-        ->and($notification->data['description'])->toBe(__('Please verify your email address by clicking on the link we just emailed to you.'))
-        ->and($notification->data)->not->toHaveKey('action')
-        ->and($notification->data['salutation'])->toBe(__('Regards, :app', ['app' => config('app.name')]));
+    expect((new VerifyEmailForNewUser)->via($user))->toBe(['mail'])
+        ->and($user->notifications()->count())->toBe(0);
 });
 
 test('a user notifications are deleted with the account', function () {

@@ -11,28 +11,6 @@ use Illuminate\Support\Facades\URL;
 class VerifyEmailForNewUser extends VerifyEmail
 {
     /**
-     * @return array<int, string>
-     */
-    public function via(mixed $notifiable): array
-    {
-        return ['database', 'mail'];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function toDatabase(mixed $notifiable): array
-    {
-        return [
-            'title' => __('Verify your email address'),
-            'greeting' => __('Hello!'),
-            'description' => __('Please verify your email address by clicking on the link we just emailed to you.'),
-            'lines' => [__('If you did not create an account, no further action is required.')],
-            'salutation' => __('Regards, :app', ['app' => config('app.name')]),
-        ];
-    }
-
-    /**
      * Use the public verification link, which ends on the reset password page.
      */
     protected function verificationUrl($notifiable): string
