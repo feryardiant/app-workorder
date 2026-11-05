@@ -84,6 +84,18 @@ it('mutes read notification titles and descriptions', function () {
             JS);
 });
 
+it('uses localized page titles', function () {
+    $member = User::factory()->create();
+
+    browserLogin($member)
+        ->navigate('/users')
+        ->assertTitleContains('Pengguna')
+        ->navigate('/notifications')
+        ->assertTitleContains('Notifikasi')
+        ->navigate('/settings/profile')
+        ->assertTitleContains('Pengaturan profil');
+});
+
 it('labels the new controls in Indonesian', function () {
     $owner = User::factory()->withRole(Role::Owner)->create();
     User::factory()->withRole(Role::Member)->create();
