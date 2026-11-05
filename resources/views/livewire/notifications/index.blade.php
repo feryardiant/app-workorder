@@ -1,12 +1,12 @@
 <div class="flex w-full flex-1 flex-col gap-6">
-    <div class="flex items-start justify-between gap-4">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div class="relative w-full">
             <flux:heading size="xl" level="1">{{ __('Notifications') }}</flux:heading>
             <flux:subheading>{{ __('All notifications for your account') }}</flux:subheading>
         </div>
 
         @if (count($selectedNotifications) > 0)
-            <flux:button.group>
+            <flux:button.group class="shrink-0 self-start">
                 <flux:button icon="envelope-open" wire:click="markSelectedAsRead">
                     {{ __('Mark as read') }}
                 </flux:button>
@@ -51,6 +51,7 @@
                 sortable
                 :sorted="true"
                 :direction="$sortAscending ? 'asc' : 'desc'"
+                aria-sort="{{ $sortAscending ? 'ascending' : 'descending' }}"
                 wire:click="sortByReceivedAt"
                 class="w-1/12"
             >
@@ -70,15 +71,15 @@
                 >
                     <flux:table.cell class="w-11/12 whitespace-normal">
                         <div class="flex items-start gap-3">
-                            <div class="mt-0.5 flex size-[1.125rem] shrink-0 items-center justify-center">
+                            <div class="relative mt-0.5 flex size-[1.125rem] shrink-0 items-center justify-center">
                                 <flux:icon
                                     :name="$isUnread ? 'envelope' : 'envelope-open'"
                                     variant="micro"
                                     @class([
                                         'text-sky-500' => $isUnread,
                                         'text-zinc-400' => ! $isUnread,
-                                        'hidden' => $isSelected,
-                                        'group-hover:hidden' => ! $isSelected,
+                                        'opacity-0' => $isSelected,
+                                        'transition-opacity group-hover:opacity-0 group-focus-within:opacity-0' => ! $isSelected,
                                     ])
                                 />
 
@@ -86,14 +87,14 @@
                                     type="button"
                                     role="checkbox"
                                     aria-checked="{{ $isSelected ? 'true' : 'false' }}"
-                                    aria-label="{{ __('Select notification') }}"
+                                    aria-label="{{ __('Select notification') }}: {{ $notification->data['title'] ?? '' }}"
                                     wire:click.stop="toggleSelected('{{ $notification->id }}')"
                                     @class([
-                                        'size-[1.125rem] items-center justify-center rounded-[.3rem] border',
+                                        'absolute inset-0 z-10 flex items-center justify-center rounded-[.3rem] border transition-opacity',
                                         'border-sky-500 bg-sky-500 text-white' => $isSelected,
-                                        'border-zinc-300 dark:border-zinc-600' => ! $isSelected,
-                                        'hidden group-hover:flex' => ! $isSelected,
-                                        'flex' => $isSelected,
+                                        'border-zinc-300 bg-white dark:border-zinc-600 dark:bg-zinc-800' => ! $isSelected,
+                                        'pointer-events-auto opacity-100' => $isSelected,
+                                        'pointer-events-none opacity-0 group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100 focus-visible:pointer-events-auto focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500' => ! $isSelected,
                                     ])
                                 >
                                     @if ($isSelected)
@@ -103,7 +104,14 @@
                             </div>
 
                             <div class="min-w-0">
-                                <div class="font-medium">{{ $notification->data['title'] ?? '' }}</div>
+                                <button
+                                    type="button"
+                                    wire:click.stop="openNotification('{{ $notification->id }}')"
+                                    class="text-left font-medium focus-visible:underline focus-visible:outline-none"
+                                >
+                                    {{ $notification->data['title'] ?? '' }}
+                                </button>
+
                                 <div class="text-sm text-zinc-500 dark:text-zinc-400">
                                     {{ $notification->data['description'] ?? '' }}
                                 </div>
@@ -112,7 +120,7 @@
                     </flux:table.cell>
 
                     <flux:table.cell align="end" class="w-1/12 whitespace-nowrap">
-                        {{ $notification->created_at?->toFormattedDateString() ?? '—' }}
+                        {{ $notification->created_at?->translatedFormat('d M Y') ?? '—' }}
                     </flux:table.cell>
                 </flux:table.row>
             @empty

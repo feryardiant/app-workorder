@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Users\ChangeUserRole;
 use App\Enums\Role;
 use App\Livewire\Notifications\Index;
 use App\Models\User;
@@ -136,6 +137,15 @@ test('notifications can be sorted by received date', function () {
     expect(strpos($component->html(), $older->id))->toBeLessThan(strpos($component->html(), $newer->id));
 });
 
+test('a role change stores exactly one notification', function () {
+    $actor = User::factory()->withRole(Role::Admin)->create();
+    $member = User::factory()->withRole(Role::Member)->create();
+
+    app(ChangeUserRole::class)->promote($member, $actor);
+
+    expect($member->notifications()->count())->toBe(1);
+});
+
 test('role change notifications are stored in the database', function () {
     $actor = User::factory()->withRole(Role::Admin)->create();
     $user = User::factory()->create();
@@ -158,5 +168,7 @@ test('email verification notifications are stored in the database', function () 
 
     expect($notification->type)->toBe(VerifyEmailForNewUser::class)
         ->and($notification->data['title'])->toBe(__('Verify your email address'))
+        ->and($notification->data['description'])->toBe(__('Please click the button below to verify your email address.'))
+        ->and($notification->data['action']['label'])->toBe(__('Verify email address'))
         ->and($notification->data['action']['url'])->toBeString();
 });

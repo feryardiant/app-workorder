@@ -41,12 +41,22 @@
 
             @php($unreadNotifications = auth()->user()->unreadNotifications()->count())
 
-            <flux:dropdown
-                position="top"
-                align="end"
+            <div
+                class="contents"
                 x-data="{ unread: {{ $unreadNotifications }} }"
                 @notifications-updated.window="unread = $event.detail.count"
             >
+                <span
+                    class="sr-only"
+                    role="status"
+                    aria-live="polite"
+                    aria-atomic="true"
+                    x-text="unread > 0
+                        ? {{ \Illuminate\Support\Js::from(__(':count unread notifications')) }}.replace(':count', unread)
+                        : {{ \Illuminate\Support\Js::from(__('No unread notifications')) }}"
+                ></span>
+
+                <flux:dropdown position="top" align="end">
                 <flux:profile
                     :initials="auth()->user()->initials()"
                     icon-trailing="chevron-down"
@@ -91,7 +101,14 @@
                             {{ __('Notification') }}
 
                             <x-slot:suffix>
-                                <span x-show="unread > 0" x-text="unread" class="ms-auto text-xs text-zinc-400"></span>
+                                <span
+                                    x-show="unread > 0"
+                                    x-text="unread"
+                                    role="status"
+                                    aria-live="polite"
+                                    aria-atomic="true"
+                                    class="ms-auto text-xs text-zinc-400"
+                                ></span>
                             </x-slot:suffix>
                         </flux:menu.item>
                     </flux:menu.radio.group>
@@ -111,7 +128,8 @@
                         </flux:menu.item>
                     </form>
                 </flux:menu>
-            </flux:dropdown>
+                </flux:dropdown>
+            </div>
         </flux:header>
 
         {{ $slot }}
