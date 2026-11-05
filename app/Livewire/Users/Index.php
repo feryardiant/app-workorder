@@ -12,6 +12,7 @@ use App\Notifications\VerifyEmailForNewUser;
 use Flux\Flux;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
@@ -19,6 +20,7 @@ use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Throwable;
 
 #[Title('Users')]
 class Index extends Component
@@ -42,6 +44,18 @@ class Index extends Component
     public string $email = '';
 
     public int $role = Role::Member->value;
+
+    /**
+     * @var array<int, int|string>
+     */
+    public array $selected = [];
+
+    public int $selectionKey = 0;
+
+    /**
+     * @var 'asc'|'desc'
+     */
+    public string $sortDirection = 'desc';
 
     public function createUser(): void
     {
@@ -216,10 +230,67 @@ class Index extends Component
         //
     }
 
+    public function updatedPage(): void
+    {
+        $this->selected = [];
+    }
+
+    public function sortByCreatedAt(): void
+    {
+        $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        $this->resetPage();
+    }
+
+    public function deleteSelected(): void
+    {
+        $actor = Auth::user();
+
+        abort_unless($actor instanceof User && $actor->role->canManageUsers(), 403);
+
+        $users = User::query()->whereKey($this->selected)->get();
+
+        foreach ($users as $user) {
+            abort_if(
+                $user->is($actor) || ($user->role->isOwner() && ! $actor->role->isOwner()),
+                403,
+            );
+        }
+
+        $deleted = false;
+
+        try {
+            if ($users->isNotEmpty()) {
+                DB::transaction(fn () => $users->each->delete());
+
+                $deleted = true;
+            }
+        } catch (Throwable) {
+            $deleted = false;
+        }
+
+        $this->reset('selected');
+        $this->selectionKey++;
+        $this->resetPage();
+
+        if (! $deleted) {
+            Flux::toast(variant: 'danger', text: __('Failed to delete the selected users.'));
+
+            return;
+        }
+
+        Flux::toast(
+            variant: 'success',
+            text: __(':count users deleted successfully.', ['count' => $users->count()]),
+        );
+    }
+
     public function render(): View
     {
         return view('livewire.users.index', [
-            'users' => User::query()->latest()->paginate(10),
+            'users' => User::query()
+                ->orderBy('created_at', $this->sortDirection)
+                ->orderBy('id')
+                ->paginate(10),
         ]);
     }
 }

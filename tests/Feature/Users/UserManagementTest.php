@@ -312,6 +312,93 @@ test('a member cannot remove a user through the confirmation modal', function ()
     expect($user->fresh())->not->toBeNull();
 });
 
+test('an admin can remove the selected users', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $users = User::factory()->count(3)->create();
+
+    Livewire::test(Index::class)
+        ->set('selected', $users->pluck('id')->all())
+        ->call('deleteSelected')
+        ->assertHasNoErrors()
+        ->assertSet('selected', [])
+        ->assertDispatched('toast-show', fn (string $name, array $params) => ($params['dataset']['variant'] ?? null) === 'success'
+            && ($params['slots']['text'] ?? null) === __(':count users deleted successfully.', ['count' => 3]));
+
+    expect(User::query()->whereKey($users->pluck('id'))->count())->toBe(0);
+});
+
+test('deleting selected users reports a failure when nothing was deleted', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+
+    Livewire::test(Index::class)
+        ->set('selected', [999999])
+        ->call('deleteSelected')
+        ->assertHasNoErrors()
+        ->assertDispatched('toast-show', fn (string $name, array $params) => ($params['dataset']['variant'] ?? null) === 'danger');
+});
+
+test('the batch action dropdown only appears when rows are selected', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $user = User::factory()->create();
+
+    Livewire::test(Index::class)
+        ->assertDontSee(__('Delete selected users'))
+        ->set('selected', [$user->id])
+        ->assertSee(__('Delete selected users'));
+});
+
+test('a member cannot remove selected users', function () {
+    actingAs(User::factory()->withRole(Role::Member)->create());
+    $users = User::factory()->count(2)->create();
+
+    Livewire::test(Index::class)
+        ->set('selected', $users->pluck('id')->all())
+        ->call('deleteSelected')
+        ->assertForbidden();
+
+    expect(User::query()->whereKey($users->pluck('id'))->count())->toBe(2);
+});
+
+test('selecting a row is cleared when the page changes', function () {
+    actingAs(User::factory()->create());
+    User::factory()->count(14)->create();
+
+    Livewire::test(Index::class)
+        ->set('selected', [1])
+        ->call('gotoPage', 2)
+        ->assertSet('selected', []);
+});
+
+test('users are ordered by creation date newest first', function () {
+    $actor = User::factory()->create(['created_at' => now()->subDays(5)]);
+    $older = User::factory()->create(['created_at' => now()->subDay()]);
+    $newer = User::factory()->create(['created_at' => now()]);
+
+    actingAs($actor);
+
+    Livewire::test(Index::class)
+        ->assertSet('sortDirection', 'desc')
+        ->assertViewHas('users', fn ($users) => $users->pluck('id')->all() === [$newer->id, $older->id, $actor->id]);
+});
+
+test('the created at column can be sorted', function () {
+    actingAs(User::factory()->create());
+
+    Livewire::test(Index::class)
+        ->call('sortByCreatedAt')
+        ->assertSet('sortDirection', 'asc')
+        ->call('sortByCreatedAt')
+        ->assertSet('sortDirection', 'desc');
+});
+
+test('the edit user modal is a flyout', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $user = User::factory()->create();
+
+    Livewire::test(Edit::class, ['user' => $user])
+        ->assertSeeHtml('data-flux-flyout');
+});
+
 test('a member cannot edit or remove users', function () {
     actingAs(User::factory()->withRole(Role::Member)->create());
     $user = User::factory()->create();
