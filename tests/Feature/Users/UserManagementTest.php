@@ -519,6 +519,27 @@ test('a new user email cannot be verified with an invalid hash', function () {
     expect($user->fresh()->hasVerifiedEmail())->toBeFalse();
 });
 
+test('an authenticated user sees instructions for a used invitation link', function () {
+    $invited = User::factory()->create();
+    actingAs(User::factory()->create());
+
+    $url = URL::temporarySignedRoute(
+        'verification.verify.new',
+        now()->addMinutes(60),
+        ['id' => $invited->id, 'hash' => sha1($invited->email)],
+    );
+
+    $status = __('This invitation has already been used. Use the "Forgot your password?" link to set your password.');
+
+    get($url)
+        ->assertRedirect(route('dashboard'))
+        ->assertSessionHas('status', $status);
+
+    get(route('dashboard'))
+        ->assertOk()
+        ->assertSee($status);
+});
+
 test('a verified user cannot get a password reset token from a verification link', function () {
     $user = User::factory()->create();
 
