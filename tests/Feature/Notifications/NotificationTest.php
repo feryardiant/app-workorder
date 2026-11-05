@@ -57,6 +57,20 @@ test('guests cannot poll for notifications', function () {
     postJson(route('notifications.latest.ack'))->assertUnauthorized();
 });
 
+test('the notification poller is only rendered for verified users', function () {
+    actingAs(User::factory()->unverified()->create());
+
+    get(route('profile.edit'))
+        ->assertOk()
+        ->assertDontSee('data-notification-poller');
+
+    actingAs(User::factory()->create());
+
+    get(route('dashboard'))
+        ->assertOk()
+        ->assertSee('data-notification-poller');
+});
+
 test('the notification poller reports only new unread notifications', function () {
     $user = User::factory()->create();
     $actor = User::factory()->create();
