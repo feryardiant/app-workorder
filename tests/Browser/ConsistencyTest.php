@@ -96,6 +96,15 @@ it('uses localized page titles', function () {
         ->assertTitleContains('Pengaturan profil');
 });
 
+it('localizes user dates', function () {
+    $owner = User::factory()->withRole(Role::Owner)->create();
+    User::factory()->create(['created_at' => '2026-05-05 12:00:00']);
+
+    browserLogin($owner)
+        ->navigate('/users')
+        ->assertSee('05 Mei 2026');
+});
+
 it('labels the new controls in Indonesian', function () {
     $owner = User::factory()->withRole(Role::Owner)->create();
     User::factory()->withRole(Role::Member)->create();

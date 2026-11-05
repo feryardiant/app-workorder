@@ -10,7 +10,7 @@
             </flux:heading>
 
             <flux:subheading class="flex flex-wrap items-center gap-2">
-                <span>{{ $user->created_at?->toFormattedDateString() ?? '—' }}</span>
+                <span>{{ $user->created_at?->translatedFormat('d M Y') ?? '—' }}</span>
                 <span>|</span>
                 <span>{{ $user->email }}</span>
 
@@ -76,7 +76,7 @@
 
         <div>
             <flux:text>{{ __('Registered at') }}</flux:text>
-            <flux:heading>{{ $user->created_at?->toFormattedDateString() ?? '—' }}</flux:heading>
+            <flux:heading>{{ $user->created_at?->translatedFormat('d M Y') ?? '—' }}</flux:heading>
         </div>
     </flux:card>
 
