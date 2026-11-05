@@ -1,8 +1,4 @@
-<div
-    class="flex w-full flex-1 flex-col gap-6"
-    data-notifications-url="{{ route('notifications.index') }}"
-    x-init="if (new URLSearchParams(location.search).has('open')) history.replaceState(null, '', $el.dataset.notificationsUrl)"
->
+<div class="flex w-full flex-1 flex-col gap-6">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div class="relative w-full">
             <flux:heading size="xl" level="1">{{ __('Notifications') }}</flux:heading>
@@ -195,4 +191,12 @@
             </div>
         @endif
     </flux:modal>
+
+    @script
+        <script>
+            if (new URLSearchParams(window.location.search).has('open')) {
+                window.history.replaceState(null, '', @js(route('notifications.index')));
+            }
+        </script>
+    @endscript
 </div>
