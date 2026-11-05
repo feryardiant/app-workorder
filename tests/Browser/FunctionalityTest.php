@@ -217,7 +217,8 @@ it('opens a notification from a deep link', function () {
     browserLogin($owner)
         ->navigate("/notifications?open={$notification->id}")
         ->wait(0.5)
-        ->assertScript('document.querySelector("dialog[open]") !== null');
+        ->assertScript('document.querySelector("dialog[open]") !== null')
+        ->assertScript('window.location.search === ""');
 
     expect($notification->refresh()->read_at)->not->toBeNull();
 });

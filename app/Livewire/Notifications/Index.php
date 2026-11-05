@@ -10,6 +10,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Js;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -38,6 +39,13 @@ class Index extends Component
         }
 
         $this->openNotification($open);
+
+        if ($this->selectedNotificationId !== null) {
+            $this->js(\sprintf(
+                'window.history.replaceState(null, "", %s)',
+                Js::from(route('notifications.index')),
+            ));
+        }
     }
 
     public function sortByReceivedAt(): void
