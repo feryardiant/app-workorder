@@ -86,6 +86,8 @@ test('the edit user modal opens from the users table', function () {
 });
 
 test('an admin can edit a user', function () {
+    Notification::fake();
+
     actingAs(User::factory()->withRole(Role::Admin)->create());
     $user = User::factory()->create();
 
@@ -101,6 +103,8 @@ test('an admin can edit a user', function () {
         ->name->toBe('Updated Name')
         ->email->toBe('updated@example.com')
         ->email_verified_at->toBeNull();
+
+    Notification::assertSentTo($user, VerifyEmailForNewUser::class);
 });
 
 test('an admin can resend verification to an unverified user', function () {

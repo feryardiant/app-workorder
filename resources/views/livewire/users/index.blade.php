@@ -72,7 +72,7 @@
                 <flux:table.column>
                     <span class="inline-flex items-center gap-2">
                         @if ($canManageUsers)
-                            <span class="relative inline-flex shrink-0 items-center justify-center">
+                            <label class="relative -m-1.5 inline-flex shrink-0 cursor-pointer items-center justify-center p-1.5">
                                 <input
                                     type="checkbox"
                                     wire:change="toggleSelectAll"
@@ -89,7 +89,7 @@
                                 <svg class="pointer-events-none absolute hidden h-0.5 w-[.55rem] rounded-full bg-white peer-indeterminate:block dark:bg-zinc-800" viewBox="0 0 10 2" fill="currentColor" aria-hidden="true">
                                     <rect width="10" height="2" rx="1" />
                                 </svg>
-                            </span>
+                            </label>
                         @endif
 
                         {{ __('Name') }}
@@ -103,6 +103,7 @@
                     sortable
                     sorted
                     :direction="$sortDirection"
+                    :aria-sort="$sortDirection === 'asc' ? 'ascending' : 'descending'"
                     wire:click="sortByCreatedAt"
                 >
                     {{ __('Registered at') }}
@@ -119,7 +120,7 @@
                     <flux:table.row
                         :key="$user->id"
                         class="group/row cursor-pointer hover:bg-zinc-100/60 dark:hover:bg-zinc-700/30"
-                        x-on:click="if (! $event.target.closest('a, button, input, ui-checkbox, ui-dropdown')) window.Livewire.navigate('{{ route('users.show', $user) }}')"
+                        x-on:click="if (! window.getSelection()?.toString() && ! $event.target.closest('a, button, input, ui-checkbox, ui-dropdown')) window.Livewire.navigate('{{ route('users.show', $user) }}')"
                     >
                         <flux:table.cell class="w-7/12">
                             <span class="relative inline-flex items-center gap-2">
@@ -132,7 +133,7 @@
                                         @class([
                                             'relative inline-flex ml-1 size-8 shrink-0 items-center justify-center transition-opacity',
                                             'opacity-0' => $isSelected,
-                                            'group-hover/row:opacity-0 group-focus-within/row:opacity-0' => ! $isSelected && $canManageUser,
+                                            'group-hover/row:opacity-0 group-focus-within/row:opacity-0 [@media(hover:none)]:opacity-0' => ! $isSelected && $canManageUser,
                                         ])
                                         aria-hidden="true"
                                     >
@@ -147,13 +148,16 @@
                                 @endif
 
                                 @if ($canManageUser)
-                                    <span class="absolute left-1 top-1/2 z-10 flex size-8 -translate-y-1/2 items-center justify-center">
+                                    <span
+                                        class="absolute left-0 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center"
+                                        x-on:click="if (! $event.target.closest('ui-checkbox')) { $event.stopPropagation(); $el.querySelector('ui-checkbox').click() }"
+                                    >
                                         <flux:checkbox
                                             value="{{ $user->id }}"
                                             :aria-label="__('Select :name', ['name' => $user->name])"
                                             @class([
                                                 'transition-opacity',
-                                                'opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100' => ! $isSelected,
+                                                'pointer-events-none opacity-0 group-hover/row:pointer-events-auto group-hover/row:opacity-100 group-focus-within/row:pointer-events-auto group-focus-within/row:opacity-100 [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100' => ! $isSelected,
                                             ])
                                         />
                                     </span>
@@ -174,7 +178,7 @@
                         </flux:table.cell>
 
                         <flux:table.cell align="end" class="w-1/12 whitespace-nowrap">
-                            {{ $user->created_at?->toFormattedDateString() ?? '—' }}
+                            {{ $user->created_at?->translatedFormat('d M Y') ?? '—' }}
                         </flux:table.cell>
 
                         <flux:table.cell align="center" class="w-1/12">

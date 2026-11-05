@@ -18,7 +18,6 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
-use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Throwable;
@@ -26,7 +25,6 @@ use Throwable;
 /**
  * @property-read LengthAwarePaginator<int, User> $users
  */
-#[Title('Users')]
 class Index extends Component
 {
     use ProfileValidationRules, WithPagination;
@@ -353,7 +351,7 @@ class Index extends Component
     {
         return view('livewire.users.index', [
             'users' => $this->users,
-        ]);
+        ])->title(__('Users'));
     }
 
     /**

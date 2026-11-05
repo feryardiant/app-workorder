@@ -1,6 +1,6 @@
 <div class="flex w-full flex-1 flex-col gap-6">
     @php($roleColor = $user->role->isOwner() ? 'amber' : ($user->role->isAdmin() ? 'blue' : 'zinc'))
-    @php($canManageUser = auth()->user()->role->canManageUsers() && (auth()->user()->role->isOwner() || ! $user->role->isOwner()))
+    @php($canManageUser = auth()->user()->role->canManageUsers() && ! $user->is(auth()->user()) && (auth()->user()->role->isOwner() || ! $user->role->isOwner()))
 
     <div class="flex items-start justify-between gap-4">
         <div class="relative w-full">
@@ -10,7 +10,7 @@
             </flux:heading>
 
             <flux:subheading class="flex flex-wrap items-center gap-2">
-                <span>{{ $user->created_at?->toFormattedDateString() ?? '—' }}</span>
+                <span>{{ $user->created_at?->translatedFormat('d M Y') ?? '—' }}</span>
                 <span>|</span>
                 <span>{{ $user->email }}</span>
 
@@ -76,7 +76,7 @@
 
         <div>
             <flux:text>{{ __('Registered at') }}</flux:text>
-            <flux:heading>{{ $user->created_at?->toFormattedDateString() ?? '—' }}</flux:heading>
+            <flux:heading>{{ $user->created_at?->translatedFormat('d M Y') ?? '—' }}</flux:heading>
         </div>
     </flux:card>
 

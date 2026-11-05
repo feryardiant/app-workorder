@@ -6,6 +6,7 @@ namespace App\Livewire\Users;
 
 use App\Concerns\ProfileValidationRules;
 use App\Models\User;
+use App\Notifications\VerifyEmailForNewUser;
 use Flux\Flux;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -58,17 +59,25 @@ class Edit extends Component
             'email' => Str::lower($validated['email']),
         ]);
 
-        if ($this->user->isDirty('email')) {
+        $emailChanged = $this->user->isDirty('email');
+
+        if ($emailChanged) {
             $this->user->email_verified_at = null;
         }
 
         $this->user->save();
 
+        if ($emailChanged) {
+            $this->user->notify(new VerifyEmailForNewUser);
+        }
+
         $this->showModal = false;
 
         $this->dispatch('user-updated');
 
-        Flux::toast(variant: 'success', text: __('User updated.'));
+        Flux::toast(variant: 'success', text: $emailChanged
+            ? __('User updated. A verification email has been sent to the new address.')
+            : __('User updated.'));
     }
 
     public function render(): View

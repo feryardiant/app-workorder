@@ -8,13 +8,12 @@ use App\Concerns\ProfileValidationRules;
 use App\Models\User;
 use Flux\Flux;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
-use Livewire\Attributes\Title;
 use Livewire\Component;
 
-#[Title('Profile settings')]
 class Profile extends Component
 {
     use ProfileValidationRules;
@@ -30,6 +29,11 @@ class Profile extends Component
     {
         $this->name = Auth::user()->name;
         $this->email = Auth::user()->email;
+    }
+
+    public function render(): View
+    {
+        return view('livewire.settings.profile')->title(__('Profile settings'));
     }
 
     /**

@@ -11,11 +11,9 @@ use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
-use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-#[Title('Notifications')]
 class Index extends Component
 {
     use WithPagination;
@@ -45,8 +43,14 @@ class Index extends Component
     public function sortByReceivedAt(): void
     {
         $this->sortAscending = ! $this->sortAscending;
+        $this->selectedNotifications = [];
 
         $this->resetPage();
+    }
+
+    public function updatedPage(): void
+    {
+        $this->selectedNotifications = [];
     }
 
     public function openNotification(string $id): void
@@ -229,6 +233,6 @@ class Index extends Component
                 ->reorder('created_at', $this->sortAscending ? 'asc' : 'desc')
                 ->orderBy('id', $this->sortAscending ? 'asc' : 'desc')
                 ->paginate(10),
-        ]);
+        ])->title(__('Notifications'));
     }
 }

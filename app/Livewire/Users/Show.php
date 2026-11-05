@@ -12,10 +12,8 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
-use Livewire\Attributes\Title;
 use Livewire\Component;
 
-#[Title('User profile')]
 class Show extends Component
 {
     public User $user;
@@ -94,6 +92,6 @@ class Show extends Component
 
     public function render(): View
     {
-        return view('livewire.users.show');
+        return view('livewire.users.show')->title(__('User profile'));
     }
 }

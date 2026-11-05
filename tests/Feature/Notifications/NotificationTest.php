@@ -57,6 +57,20 @@ test('guests cannot poll for notifications', function () {
     postJson(route('notifications.latest.ack'))->assertUnauthorized();
 });
 
+test('the notification poller is only rendered for verified users', function () {
+    actingAs(User::factory()->unverified()->create());
+
+    get(route('profile.edit'))
+        ->assertOk()
+        ->assertDontSee('data-notification-poller');
+
+    actingAs(User::factory()->create());
+
+    get(route('dashboard'))
+        ->assertOk()
+        ->assertSee('data-notification-poller');
+});
+
 test('the notification poller reports only new unread notifications', function () {
     $user = User::factory()->create();
     $actor = User::factory()->create();
@@ -132,6 +146,28 @@ test('opening a notification shows its content in a modal', function () {
         ->assertSee($actor->name);
 
     expect($notification->refresh()->read_at)->not->toBeNull();
+});
+
+test('selection clears when paging or sorting notifications', function () {
+    $user = User::factory()->create();
+    $actor = User::factory()->create();
+
+    foreach (range(1, 11) as $ignored) {
+        $user->notify(new UserRoleChangedNotification($actor, Role::Admin));
+    }
+
+    actingAs($user);
+
+    $id = $user->notifications()->latest()->value('id');
+
+    Livewire::test(Index::class)
+        ->set('selectedNotifications', [$id])
+        ->call('gotoPage', 2)
+        ->assertSet('selectedNotifications', [])
+        ->call('gotoPage', 1)
+        ->set('selectedNotifications', [$id])
+        ->call('sortByReceivedAt')
+        ->assertSet('selectedNotifications', []);
 });
 
 test('notifications can be selected individually or all at once', function () {
