@@ -798,4 +798,3 @@ function createTestDatabaseSessionFor(User $user): void
         'last_activity' => now()->getTimestamp(),
     ]);
 }
-
