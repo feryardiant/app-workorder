@@ -153,6 +153,7 @@
     "User promoted to Admin.": "Pengguna dijadikan Admin.",
     "User removed.": "Pengguna dihapus.",
     "User updated.": "Pengguna diperbarui.",
+    "User updated. A verification email has been sent to the new address.": "Pengguna diperbarui. Email verifikasi telah dikirim ke alamat baru.",
     "Users": "Pengguna",
     "Verification email resent to :email.": "Email verifikasi dikirim ulang ke :email.",
     "Verified": "Terverifikasi",
