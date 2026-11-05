@@ -128,6 +128,11 @@
                                     ])
                                 >
                                     <span class="sr-only">{{ $isUnread ? __('Unread') : __('Read') }}:</span>
+
+                                    @if ($isUnread)
+                                        <span data-unread-dot class="mr-1 inline-block size-1.5 rounded-full bg-sky-500 align-middle [@media(hover:hover)]:hidden" aria-hidden="true"></span>
+                                    @endif
+
                                     {{ $notification->data['title'] ?? '' }}
                                 </button>
 
