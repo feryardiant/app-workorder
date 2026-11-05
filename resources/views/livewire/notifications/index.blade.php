@@ -45,7 +45,7 @@
                         wire:click="toggleSelectAll"
                         @disabled($pageIds === [])
                         @class([
-                            'flex size-[1.125rem] shrink-0 items-center justify-center rounded-[.3rem] border disabled:cursor-not-allowed disabled:opacity-40',
+                            'relative flex size-[1.125rem] shrink-0 items-center justify-center rounded-[.3rem] border before:absolute before:-inset-2 before:content-[''] disabled:cursor-not-allowed disabled:opacity-40',
                             'border-sky-500 bg-sky-500 text-white' => $allSelected || $someSelected,
                             'border-zinc-300 dark:border-zinc-600' => ! $allSelected && ! $someSelected,
                         ])

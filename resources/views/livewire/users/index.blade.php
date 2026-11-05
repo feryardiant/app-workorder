@@ -72,7 +72,7 @@
                 <flux:table.column>
                     <span class="inline-flex items-center gap-2">
                         @if ($canManageUsers)
-                            <span class="relative inline-flex shrink-0 items-center justify-center">
+                            <label class="relative -m-1.5 inline-flex shrink-0 cursor-pointer items-center justify-center p-1.5">
                                 <input
                                     type="checkbox"
                                     wire:change="toggleSelectAll"
@@ -89,7 +89,7 @@
                                 <svg class="pointer-events-none absolute hidden h-0.5 w-[.55rem] rounded-full bg-white peer-indeterminate:block dark:bg-zinc-800" viewBox="0 0 10 2" fill="currentColor" aria-hidden="true">
                                     <rect width="10" height="2" rx="1" />
                                 </svg>
-                            </span>
+                            </label>
                         @endif
 
                         {{ __('Name') }}
