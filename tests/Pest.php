@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Pest\Browser\Api\AwaitableWebpage;
 use Tests\TestCase;
 
 /*
@@ -18,4 +20,17 @@ use Tests\TestCase;
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
-    ->in('Feature');
+    ->in('Feature', 'Browser');
+
+/**
+ * Sign in through the real login form, optionally on a given viewport.
+ */
+function browserLogin(User $user, string $device = 'desktop'): AwaitableWebpage
+{
+    return visit('/login')
+        ->on()
+        ->{$device}()
+        ->fill('email', $user->email)
+        ->fill('password', 'password')
+        ->click('@login-button');
+}

@@ -20,8 +20,8 @@ jobs:
       contents: read
       pull-requests: write
 
-  unit:
-    name: Unit
+  functional:
+    name: Functional
     runs-on: ubuntu-latest
     needs: [prepare]
     if: ${{ needs.prepare.outputs.should-release != '1' }}
@@ -81,9 +81,13 @@ jobs:
           cache: true
 
       - name: Prepare
-        run: |
-          vp build
-          php artisan migrate --force --ansi
+        run: vp build
 
       - name: Test
         run: composer test
+
+      - name: Setup Playwright
+        run: vpx playwright install chromium --with-deps --only-shell
+
+      - name: Browser Test
+        run: composer test:browser

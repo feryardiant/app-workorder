@@ -34,6 +34,8 @@ public/fonts-manifest.dev.json
 public/hot
 public/storage
 tests/coverage
+tests/Browser/Screenshots
+tests/Browser/Traces
 
 # AI Agents
 .mcp.json
