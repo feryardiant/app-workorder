@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\VerifyNewUserEmailController;
+use App\Livewire\Notifications\Index as NotificationIndex;
 use App\Livewire\Settings\Appearance;
 use App\Livewire\Settings\Profile;
 use App\Livewire\Settings\Security;
@@ -21,6 +22,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::livewire('users', Index::class)->name('users.index');
     Route::livewire('users/{user}', Show::class)->name('users.show');
+
+    Route::livewire('notifications', NotificationIndex::class)->name('notifications.index');
 });
 
 Route::middleware(['auth'])->group(function () {

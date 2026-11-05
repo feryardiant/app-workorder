@@ -24,21 +24,35 @@ class UserRoleChangedNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 
     public function toMail(User $notifiable): MailMessage
     {
-        $app = config('app.name');
-
         return (new MailMessage)
-            ->subject(__('Your role at :app has changed', ['app' => $app]))
+            ->subject(__('Your role at :app has changed', ['app' => config('app.name')]))
             ->greeting(__('Hi :name', ['name' => $notifiable->name]))
-            ->line(__(':actor just changed your role to :role at :app.', [
-                'actor' => $this->actor->name,
-                'role' => $this->newRole->label(),
-                'app' => $app,
-            ]))
+            ->line($this->description())
             ->salutation(__('Best regards'));
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function toDatabase(object $notifiable): array
+    {
+        return [
+            'title' => __('Your role has changed'),
+            'description' => $this->description(),
+        ];
+    }
+
+    private function description(): string
+    {
+        return __(':actor just changed your role to :role at :app.', [
+            'actor' => $this->actor->name,
+            'role' => $this->newRole->label(),
+            'app' => config('app.name'),
+        ]);
     }
 }

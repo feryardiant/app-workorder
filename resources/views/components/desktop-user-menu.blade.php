@@ -1,8 +1,14 @@
+@php($unreadNotifications = auth()->user()->unreadNotifications()->count())
+
 <flux:dropdown position="bottom" align="start">
     <flux:sidebar.profile
         :name="auth()->user()->name"
         :initials="auth()->user()->initials()"
         icon:trailing="chevrons-up-down"
+        avatar:badge="{{ $unreadNotifications ? ' ' : '' }}"
+        avatar:badge:color="red"
+        avatar:badge:circle
+        avatar:badge:position="top left"
         data-test="sidebar-menu-button"
     />
 
@@ -21,6 +27,14 @@
         <flux:menu.radio.group>
             <flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>
                 {{ __('Settings') }}
+            </flux:menu.item>
+            <flux:menu.item
+                :href="route('notifications.index')"
+                icon="bell"
+                :suffix="$unreadNotifications ?: null"
+                wire:navigate
+            >
+                {{ __('Notification') }}
             </flux:menu.item>
             <form method="POST" action="{{ route('logout') }}" class="w-full">
                 @csrf

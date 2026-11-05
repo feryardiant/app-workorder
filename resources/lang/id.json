@@ -8,6 +8,7 @@
     "Add": "Tambah",
     "Add user": "Tambah pengguna",
     "Admin": "Admin",
+    "All notifications for your account": "Semua notifikasi untuk akun Anda",
     "All registered users": "Semua pengguna terdaftar",
     "Appearance": "Tampilan",
     "Appearance settings": "Pengaturan tampilan",
@@ -59,9 +60,13 @@
     "login using an authentication code": "masuk menggunakan kode autentikasi",
     "Manage your profile and account settings": "Kelola profil dan pengaturan akun Anda",
     "Manage your two-factor authentication settings": "Kelola pengaturan autentikasi dua faktor Anda",
+    "Mark as read": "Tandai sudah dibaca",
     "Member": "Anggota",
     "Name": "Nama",
     "New password": "Kata sandi baru",
+    "No notifications yet.": "Belum ada notifikasi.",
+    "Notification": "Notifikasi",
+    "Notifications": "Notifikasi",
     "Once your account is deleted, all of its resources and data will be permanently deleted. Please enter your password to confirm you would like to permanently delete your account.": "Setelah akun Anda dihapus, semua sumber daya dan datanya akan dihapus secara permanen. Silakan masukkan kata sandi Anda untuk mengonfirmasi bahwa Anda ingin menghapus akun Anda secara permanen.",
     "or you can": "atau Anda dapat",
     "or, enter the code manually": "atau masukkan kode secara manual",
@@ -79,6 +84,7 @@
     "Promote :name to Admin?": "Jadikan :name sebagai Admin?",
     "Promote admin": "Jadikan Admin",
     "Promote user": "Promosikan pengguna",
+    "Received at": "Diterima pada",
     "Recovery code": "Kode pemulihan",
     "Recovery codes": "Kode pemulihan",
     "Recovery codes let you regain access if you lose your 2FA device. Store them in a secure password manager.": "Kode pemulihan memungkinkan Anda mendapatkan akses kembali jika kehilangan perangkat 2FA. Simpan di pengelola kata sandi yang aman.",
@@ -125,5 +131,6 @@
     "You": "Anda",
     "You will be prompted for a secure, random pin during login, which you can retrieve from the TOTP-supported application on your phone.": "Anda akan diminta memasukkan kode autentikasi acak yang aman saat masuk, yang dapat Anda ambil dari aplikasi yang mendukung TOTP di ponsel Anda.",
     "Your email address is unverified.": "Alamat email Anda belum diverifikasi.",
-    "Your role at :app has changed": "Peran Anda di :app telah berubah"
+    "Your role at :app has changed": "Peran Anda di :app telah berubah",
+    "Your role has changed": "Peran Anda telah berubah"
 }
