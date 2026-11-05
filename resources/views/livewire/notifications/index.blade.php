@@ -7,11 +7,21 @@
 
         @if (count($selectedNotifications) > 0)
             <flux:button.group class="shrink-0 self-start max-sm:flex-wrap">
-                <flux:button icon="envelope-open" wire:click="markSelectedAsRead" class="max-sm:px-2!">
-                    {{ __('Mark as read') }}
+                <flux:button
+                    icon="envelope-open"
+                    wire:click="markSelectedAsRead"
+                    aria-label="{{ __('Mark as read') }}"
+                    class="max-sm:w-10! max-sm:px-0!"
+                >
+                    <span class="max-sm:hidden">{{ __('Mark as read') }}</span>
                 </flux:button>
-                <flux:button icon="envelope" wire:click="markSelectedAsUnread" class="max-sm:px-2!">
-                    {{ __('Mark as unread') }}
+                <flux:button
+                    icon="envelope"
+                    wire:click="markSelectedAsUnread"
+                    aria-label="{{ __('Mark as unread') }}"
+                    class="max-sm:w-10! max-sm:px-0!"
+                >
+                    <span class="max-sm:hidden">{{ __('Mark as unread') }}</span>
                 </flux:button>
             </flux:button.group>
         @endif
@@ -21,6 +31,7 @@
 
     @php($pageIds = $notifications->pluck('id')->all())
     @php($allSelected = $pageIds !== [] && array_diff($pageIds, $selectedNotifications) === [])
+    @php($someSelected = ! $allSelected && array_intersect($pageIds, $selectedNotifications) !== [])
 
     <flux:table :paginate="$notifications">
         <flux:table.columns>
@@ -29,18 +40,20 @@
                     <button
                         type="button"
                         role="checkbox"
-                        aria-checked="{{ $allSelected ? 'true' : 'false' }}"
+                        aria-checked="{{ $allSelected ? 'true' : ($someSelected ? 'mixed' : 'false') }}"
                         aria-label="{{ __('Select all notifications') }}"
                         wire:click="toggleSelectAll"
                         @disabled($pageIds === [])
                         @class([
                             'flex size-[1.125rem] shrink-0 items-center justify-center rounded-[.3rem] border disabled:cursor-not-allowed disabled:opacity-40',
-                            'border-sky-500 bg-sky-500 text-white' => $allSelected,
-                            'border-zinc-300 dark:border-zinc-600' => ! $allSelected,
+                            'border-sky-500 bg-sky-500 text-white' => $allSelected || $someSelected,
+                            'border-zinc-300 dark:border-zinc-600' => ! $allSelected && ! $someSelected,
                         ])
                     >
                         @if ($allSelected)
                             <flux:icon name="check" variant="micro" class="size-3" />
+                        @elseif ($someSelected)
+                            <flux:icon name="minus" variant="micro" class="size-3" />
                         @endif
                     </button>
 

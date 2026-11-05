@@ -80,13 +80,19 @@ test('notifications can be selected individually or all at once', function () {
 
     $ids = $user->notifications()->pluck('id')->all();
 
-    Livewire::test(Index::class)
+    $component = Livewire::test(Index::class)
         ->call('toggleSelected', $ids[0])
-        ->assertSet('selectedNotifications', [$ids[0]])
+        ->assertSet('selectedNotifications', [$ids[0]]);
+
+    expect($component->html())->toContain('aria-checked="mixed"');
+
+    $component
         ->call('toggleSelected', $ids[0])
         ->assertSet('selectedNotifications', [])
         ->call('toggleSelectAll')
         ->assertSet('selectedNotifications', $ids);
+
+    expect($component->html())->not->toContain('aria-checked="mixed"');
 });
 
 test('selected notifications can be marked as read or unread', function () {
