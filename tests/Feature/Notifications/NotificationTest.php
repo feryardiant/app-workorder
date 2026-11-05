@@ -27,7 +27,7 @@ test('the notifications page lists only the current user notifications', functio
 
     get(route('notifications.index'))
         ->assertOk()
-        ->assertSee(__('Your role has changed'))
+        ->assertSee(__('Your role at :app has changed', ['app' => config('app.name')]))
         ->assertSee($actor->name);
 
     Livewire::test(Index::class)
@@ -44,23 +44,74 @@ test('the user menu links to the notifications page and shows the unread count',
     $html = get(route('dashboard'))->assertOk()->assertSee(__('Notification'))->getContent();
 
     expect($html)->toContain(route('notifications.index'))
-        ->toContain('top-0 left-0 bg-red-500');
+        ->toContain('notifications-updated.window')
+        ->toContain('bg-red-500');
 });
 
-test('an unread notification is marked as read when opened', function () {
+test('opening a notification shows its content in a modal', function () {
     $user = User::factory()->create();
+    $actor = User::factory()->create();
 
     actingAs($user);
 
-    $user->notify(new UserRoleChangedNotification(User::factory()->create(), Role::Admin));
+    $user->notify(new UserRoleChangedNotification($actor, Role::Admin));
 
     $notification = $user->notifications()->firstOrFail();
 
     Livewire::test(Index::class)
-        ->call('markAsRead', $notification->id)
-        ->assertRedirect(route('notifications.index'));
+        ->call('openNotification', $notification->id)
+        ->assertSet('showNotificationModal', true)
+        ->assertDispatched('notifications-updated', count: 0)
+        ->assertSee(__('Your role at :app has changed', ['app' => config('app.name')]))
+        ->assertSee($actor->name);
 
     expect($notification->refresh()->read_at)->not->toBeNull();
+});
+
+test('notifications can be selected individually or all at once', function () {
+    $user = User::factory()->create();
+    $actor = User::factory()->create();
+
+    actingAs($user);
+
+    $user->notify(new UserRoleChangedNotification($actor, Role::Admin));
+    $user->notify(new UserRoleChangedNotification($actor, Role::Member));
+
+    $ids = $user->notifications()->pluck('id')->all();
+
+    Livewire::test(Index::class)
+        ->call('toggleSelected', $ids[0])
+        ->assertSet('selectedNotifications', [$ids[0]])
+        ->call('toggleSelected', $ids[0])
+        ->assertSet('selectedNotifications', [])
+        ->call('toggleSelectAll')
+        ->assertSet('selectedNotifications', $ids);
+});
+
+test('selected notifications can be marked as read or unread', function () {
+    $user = User::factory()->create();
+    $actor = User::factory()->create();
+
+    actingAs($user);
+
+    $user->notify(new UserRoleChangedNotification($actor, Role::Admin));
+    $user->notify(new UserRoleChangedNotification($actor, Role::Member));
+
+    $ids = $user->notifications()->pluck('id')->all();
+
+    Livewire::test(Index::class)
+        ->set('selectedNotifications', $ids)
+        ->call('markSelectedAsRead')
+        ->assertDispatched('notifications-updated', count: 0);
+
+    expect($user->notifications()->whereNull('read_at')->count())->toBe(0);
+
+    Livewire::test(Index::class)
+        ->set('selectedNotifications', $ids)
+        ->call('markSelectedAsUnread')
+        ->assertDispatched('notifications-updated', count: 2);
+
+    expect($user->notifications()->whereNotNull('read_at')->count())->toBe(0);
 });
 
 test('notifications can be sorted by received date', function () {
@@ -94,7 +145,7 @@ test('role change notifications are stored in the database', function () {
     $notification = $user->notifications()->firstOrFail();
 
     expect($notification->type)->toBe(UserRoleChangedNotification::class)
-        ->and($notification->data['title'])->toBe(__('Your role has changed'))
+        ->and($notification->data['title'])->toBe(__('Your role at :app has changed', ['app' => config('app.name')]))
         ->and($notification->data['description'])->toContain($actor->name);
 });
 
@@ -106,5 +157,6 @@ test('email verification notifications are stored in the database', function () 
     $notification = $user->notifications()->firstOrFail();
 
     expect($notification->type)->toBe(VerifyEmailForNewUser::class)
-        ->and($notification->data['title'])->toBe(__('Email verification'));
+        ->and($notification->data['title'])->toBe(__('Verify your email address'))
+        ->and($notification->data['action']['url'])->toBeString();
 });

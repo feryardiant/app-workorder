@@ -4,13 +4,48 @@
             <flux:heading size="xl" level="1">{{ __('Notifications') }}</flux:heading>
             <flux:subheading>{{ __('All notifications for your account') }}</flux:subheading>
         </div>
+
+        @if (count($selectedNotifications) > 0)
+            <flux:button.group>
+                <flux:button icon="envelope-open" wire:click="markSelectedAsRead">
+                    {{ __('Mark as read') }}
+                </flux:button>
+                <flux:button icon="envelope" wire:click="markSelectedAsUnread">
+                    {{ __('Mark as unread') }}
+                </flux:button>
+            </flux:button.group>
+        @endif
     </div>
 
     <flux:separator variant="subtle" />
 
+    @php($pageIds = $notifications->pluck('id')->all())
+    @php($allSelected = $pageIds !== [] && array_diff($pageIds, $selectedNotifications) === [])
+
     <flux:table :paginate="$notifications">
         <flux:table.columns>
-            <flux:table.column class="w-11/12">{{ __('Notification') }}</flux:table.column>
+            <flux:table.column class="w-11/12">
+                <div class="flex items-center gap-3">
+                    <button
+                        type="button"
+                        role="checkbox"
+                        aria-checked="{{ $allSelected ? 'true' : 'false' }}"
+                        aria-label="{{ __('Select all notifications') }}"
+                        wire:click="toggleSelectAll"
+                        @class([
+                            'flex size-[1.125rem] shrink-0 items-center justify-center rounded-[.3rem] border',
+                            'border-sky-500 bg-sky-500 text-white' => $allSelected,
+                            'border-zinc-300 dark:border-zinc-600' => ! $allSelected,
+                        ])
+                    >
+                        @if ($allSelected)
+                            <flux:icon name="check" variant="micro" class="size-3" />
+                        @endif
+                    </button>
+
+                    {{ __('Notification') }}
+                </div>
+            </flux:table.column>
             <flux:table.column
                 align="end"
                 sortable
@@ -26,25 +61,46 @@
         <flux:table.rows>
             @forelse ($notifications as $notification)
                 @php($isUnread = $notification->read_at === null)
+                @php($isSelected = in_array($notification->id, $selectedNotifications, true))
 
                 <flux:table.row
                     :key="$notification->id"
-                    :class="$isUnread ? '' : 'text-zinc-500 dark:text-zinc-400'"
+                    :class="$isUnread ? 'group cursor-pointer' : 'group cursor-pointer text-zinc-500 dark:text-zinc-400'"
+                    wire:click="openNotification('{{ $notification->id }}')"
                 >
                     <flux:table.cell class="w-11/12 whitespace-normal">
                         <div class="flex items-start gap-3">
-                            @if ($isUnread)
+                            <div class="mt-0.5 flex size-[1.125rem] shrink-0 items-center justify-center">
+                                <flux:icon
+                                    :name="$isUnread ? 'envelope' : 'envelope-open'"
+                                    variant="micro"
+                                    @class([
+                                        'text-sky-500' => $isUnread,
+                                        'text-zinc-400' => ! $isUnread,
+                                        'hidden' => $isSelected,
+                                        'group-hover:hidden' => ! $isSelected,
+                                    ])
+                                />
+
                                 <button
                                     type="button"
-                                    wire:click="markAsRead('{{ $notification->id }}')"
-                                    class="mt-0.5 shrink-0 text-sky-500"
-                                    aria-label="{{ __('Mark as read') }}"
+                                    role="checkbox"
+                                    aria-checked="{{ $isSelected ? 'true' : 'false' }}"
+                                    aria-label="{{ __('Select notification') }}"
+                                    wire:click.stop="toggleSelected('{{ $notification->id }}')"
+                                    @class([
+                                        'size-[1.125rem] items-center justify-center rounded-[.3rem] border',
+                                        'border-sky-500 bg-sky-500 text-white' => $isSelected,
+                                        'border-zinc-300 dark:border-zinc-600' => ! $isSelected,
+                                        'hidden group-hover:flex' => ! $isSelected,
+                                        'flex' => $isSelected,
+                                    ])
                                 >
-                                    <flux:icon name="envelope" variant="micro" />
+                                    @if ($isSelected)
+                                        <flux:icon name="check" variant="micro" class="size-3" />
+                                    @endif
                                 </button>
-                            @else
-                                <flux:icon name="envelope-open" variant="micro" class="mt-0.5 shrink-0 text-zinc-400" />
-                            @endif
+                            </div>
 
                             <div class="min-w-0">
                                 <div class="font-medium">{{ $notification->data['title'] ?? '' }}</div>
@@ -68,4 +124,38 @@
             @endforelse
         </flux:table.rows>
     </flux:table>
+
+    <flux:modal flyout variant="floating" wire:model.self="showNotificationModal" class="md:w-96">
+        @if ($this->selectedNotification)
+            @php($data = $this->selectedNotification->data)
+
+            <div class="space-y-6">
+                <flux:heading size="lg" class="pe-8">{{ $data['title'] ?? '' }}</flux:heading>
+
+                <div class="space-y-3 text-sm">
+                    @if (! empty($data['greeting']))
+                        <p class="font-medium">{{ $data['greeting'] }}</p>
+                    @endif
+
+                    @if (! empty($data['description']))
+                        <p>{{ $data['description'] }}</p>
+                    @endif
+
+                    @foreach ($data['lines'] ?? [] as $line)
+                        <p>{{ $line }}</p>
+                    @endforeach
+
+                    @if (! empty($data['action']['url']))
+                        <flux:button :href="$data['action']['url']" variant="primary" size="sm">
+                            {{ $data['action']['label'] ?? '' }}
+                        </flux:button>
+                    @endif
+
+                    @if (! empty($data['salutation']))
+                        <p>{{ $data['salutation'] }}</p>
+                    @endif
+                </div>
+            </div>
+        @endif
+    </flux:modal>
 </div>

@@ -41,15 +41,28 @@
 
             @php($unreadNotifications = auth()->user()->unreadNotifications()->count())
 
-            <flux:dropdown position="top" align="end">
+            <flux:dropdown
+                position="top"
+                align="end"
+                x-data="{ unread: {{ $unreadNotifications }} }"
+                @notifications-updated.window="unread = $event.detail.count"
+            >
                 <flux:profile
                     :initials="auth()->user()->initials()"
                     icon-trailing="chevron-down"
-                    avatar:badge="{{ $unreadNotifications ? ' ' : '' }}"
-                    avatar:badge:color="red"
-                    avatar:badge:circle
-                    avatar:badge:position="top left"
-                />
+                >
+                    <x-slot:avatar>
+                        <span class="relative inline-flex">
+                            <flux:avatar :initials="auth()->user()->initials()" size="sm" />
+
+                            <span
+                                x-show="unread > 0"
+                                class="absolute top-0 left-0 z-10 size-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-zinc-900"
+                                aria-hidden="true"
+                            ></span>
+                        </span>
+                    </x-slot:avatar>
+                </flux:profile>
 
                 <flux:menu>
                     <flux:menu.radio.group>
@@ -74,13 +87,12 @@
                         <flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>
                             {{ __('Settings') }}
                         </flux:menu.item>
-                        <flux:menu.item
-                            :href="route('notifications.index')"
-                            icon="bell"
-                            :suffix="$unreadNotifications ?: null"
-                            wire:navigate
-                        >
+                        <flux:menu.item :href="route('notifications.index')" icon="bell" wire:navigate>
                             {{ __('Notification') }}
+
+                            <x-slot:suffix>
+                                <span x-show="unread > 0" x-text="unread" class="ms-auto text-xs text-zinc-400"></span>
+                            </x-slot:suffix>
                         </flux:menu.item>
                     </flux:menu.radio.group>
 

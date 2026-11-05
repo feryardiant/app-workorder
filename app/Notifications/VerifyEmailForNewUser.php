@@ -19,13 +19,18 @@ class VerifyEmailForNewUser extends VerifyEmail
     }
 
     /**
-     * @return array<string, string>
+     * @return array<string, mixed>
      */
     public function toDatabase(mixed $notifiable): array
     {
         return [
-            'title' => __('Email verification'),
+            'title' => __('Verify your email address'),
             'description' => __('Please verify your email address by clicking on the link we just emailed to you.'),
+            'lines' => [__('If you did not create an account, no further action is required.')],
+            'action' => [
+                'label' => __('Verify email address'),
+                'url' => $this->verificationUrl($notifiable),
+            ],
         ];
     }
 

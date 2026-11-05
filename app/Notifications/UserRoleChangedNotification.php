@@ -30,8 +30,8 @@ class UserRoleChangedNotification extends Notification
     public function toMail(User $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject(__('Your role at :app has changed', ['app' => config('app.name')]))
-            ->greeting(__('Hi :name', ['name' => $notifiable->name]))
+            ->subject($this->subject())
+            ->greeting($this->greeting($notifiable))
             ->line($this->description())
             ->salutation(__('Best regards'));
     }
@@ -39,12 +39,24 @@ class UserRoleChangedNotification extends Notification
     /**
      * @return array<string, string>
      */
-    public function toDatabase(object $notifiable): array
+    public function toDatabase(User $notifiable): array
     {
         return [
-            'title' => __('Your role has changed'),
+            'title' => $this->subject(),
+            'greeting' => $this->greeting($notifiable),
             'description' => $this->description(),
+            'salutation' => __('Best regards'),
         ];
+    }
+
+    private function subject(): string
+    {
+        return __('Your role at :app has changed', ['app' => config('app.name')]);
+    }
+
+    private function greeting(User $notifiable): string
+    {
+        return __('Hi :name', ['name' => $notifiable->name]);
     }
 
     private function description(): string
