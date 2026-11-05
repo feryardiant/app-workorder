@@ -146,6 +146,27 @@ it('reveals user selection on hover on desktop', function () {
         ->assertScript('getComputedStyle(document.querySelector("ui-checkbox[value]")).opacity === "1"');
 });
 
+it('reveals notification selection on hover on desktop', function () {
+    $owner = User::factory()->create();
+    $owner->notify(new UserRoleChangedNotification(User::factory()->create(), Role::Admin));
+    $owner->notify(new UserRoleChangedNotification(User::factory()->create(), Role::Member));
+    $owner->notifications()->latest()->first()->markAsRead();
+
+    $page = browserLogin($owner)->navigate('/notifications');
+
+    $page->assertScript('[...document.querySelectorAll("[data-flux-row]")].every((row) => getComputedStyle(row).cursor === "pointer")')
+        ->hover('[data-flux-row]:has(button[aria-label*="Belum dibaca"])')
+        ->wait(0.5)
+        ->assertScript(<<<'JS'
+            (() => {
+                const row = document.querySelector('[data-flux-row]:has(button[aria-label*="Belum dibaca"])');
+                const checkbox = row.querySelector('button[aria-label^="Pilih notifikasi"]');
+
+                return getComputedStyle(checkbox).opacity === '1';
+            })()
+            JS);
+});
+
 it('switches to light mode and remembers it after navigation', function () {
     $member = User::factory()->withRole(Role::Member)->create();
 

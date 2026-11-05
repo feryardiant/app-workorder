@@ -80,7 +80,7 @@
 
                 <flux:table.row
                     :key="$notification->id"
-                    :class="$isUnread ? 'group cursor-pointer' : 'group cursor-pointer text-zinc-500 dark:text-zinc-400'"
+                    class="group cursor-pointer hover:bg-zinc-100/60 dark:hover:bg-zinc-700/30"
                     wire:click="openNotification('{{ $notification->id }}')"
                 >
                     <flux:table.cell class="w-11/12 whitespace-normal">
@@ -121,13 +121,21 @@
                                 <button
                                     type="button"
                                     wire:click.stop="openNotification('{{ $notification->id }}')"
-                                    class="text-left font-medium focus-visible:underline focus-visible:outline-none"
+                                    @class([
+                                        'text-left font-medium focus-visible:underline focus-visible:outline-none',
+                                        'text-zinc-900 dark:text-zinc-100' => $isUnread,
+                                        'text-zinc-500 dark:text-zinc-400' => ! $isUnread,
+                                    ])
                                 >
                                     <span class="sr-only">{{ $isUnread ? __('Unread') : __('Read') }}:</span>
                                     {{ $notification->data['title'] ?? '' }}
                                 </button>
 
-                                <div class="text-sm text-zinc-500 dark:text-zinc-400">
+                                <div @class([
+                                    'text-sm',
+                                    'text-zinc-500 dark:text-zinc-400' => $isUnread,
+                                    'text-zinc-400 dark:text-zinc-500' => ! $isUnread,
+                                ])>
                                     {{ $notification->data['description'] ?? '' }}
                                 </div>
                             </div>
