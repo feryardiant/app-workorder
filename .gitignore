@@ -28,6 +28,7 @@ dist
 # --------------------------
 .env.*
 .env
+.playwright-mcp
 mise.*.toml
 public/build
 public/fonts-manifest.dev.json
