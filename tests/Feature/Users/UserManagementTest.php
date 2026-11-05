@@ -529,7 +529,7 @@ test('an authenticated user sees instructions for a used invitation link', funct
         ['id' => $invited->id, 'hash' => sha1($invited->email)],
     );
 
-    $status = __('This invitation has already been used. Use the "Forgot your password?" link to set your password.');
+    $status = __('This invitation has already been used. Log out, then use the "Forgot your password?" link to set your password.');
 
     get($url)
         ->assertRedirect(route('dashboard'))
