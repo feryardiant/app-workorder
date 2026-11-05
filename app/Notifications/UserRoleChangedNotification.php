@@ -24,21 +24,47 @@ class UserRoleChangedNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['database', 'mail'];
     }
 
     public function toMail(User $notifiable): MailMessage
     {
-        $app = config('app.name');
-
         return (new MailMessage)
-            ->subject(__('Your role at :app has changed', ['app' => $app]))
-            ->greeting(__('Hi :name', ['name' => $notifiable->name]))
-            ->line(__(':actor just changed your role to :role at :app.', [
-                'actor' => $this->actor->name,
-                'role' => $this->newRole->label(),
-                'app' => $app,
-            ]))
+            ->subject($this->subject())
+            ->greeting($this->greeting($notifiable))
+            ->line($this->description())
             ->salutation(__('Best regards'));
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function toDatabase(User $notifiable): array
+    {
+        return [
+            'title' => $this->subject(),
+            'greeting' => $this->greeting($notifiable),
+            'description' => $this->description(),
+            'salutation' => __('Best regards'),
+        ];
+    }
+
+    private function subject(): string
+    {
+        return __('Your role at :app has changed', ['app' => config('app.name')]);
+    }
+
+    private function greeting(User $notifiable): string
+    {
+        return __('Hi :name', ['name' => $notifiable->name]);
+    }
+
+    private function description(): string
+    {
+        return __(':actor just changed your role to :role at :app.', [
+            'actor' => $this->actor->name,
+            'role' => $this->newRole->label(),
+            'app' => config('app.name'),
+        ]);
     }
 }
