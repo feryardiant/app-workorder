@@ -15,9 +15,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
+use Tests\TestCase;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
@@ -99,6 +101,85 @@ test('an admin can edit a user', function () {
         ->name->toBe('Updated Name')
         ->email->toBe('updated@example.com')
         ->email_verified_at->toBeNull();
+});
+
+test('an admin can resend verification to an unverified user', function () {
+    Notification::fake();
+
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $user = User::factory()->unverified()->create();
+
+    Livewire::test(Index::class)
+        ->call('resendVerification', $user->id)
+        ->assertHasNoErrors();
+
+    Notification::assertSentTo($user, VerifyEmailForNewUser::class);
+});
+
+test('verification cannot be resent to a verified user', function () {
+    Notification::fake();
+
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $user = User::factory()->create();
+
+    Livewire::test(Index::class)
+        ->call('resendVerification', $user->id)
+        ->assertStatus(422);
+
+    Notification::assertNotSentTo($user, VerifyEmailForNewUser::class);
+});
+
+test('an owner can resend verification to a manageable user', function () {
+    Notification::fake();
+
+    actingAs(User::factory()->withRole(Role::Owner)->create());
+    $user = User::factory()->unverified()->create();
+
+    Livewire::test(Index::class)
+        ->call('resendVerification', $user->id)
+        ->assertHasNoErrors();
+
+    Notification::assertSentTo($user, VerifyEmailForNewUser::class);
+});
+
+test('an admin cannot resend verification to an owner', function () {
+    Notification::fake();
+
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $owner = User::factory()->withRole(Role::Owner)->unverified()->create();
+
+    Livewire::test(Index::class)
+        ->call('resendVerification', $owner->id)
+        ->assertForbidden();
+
+    Notification::assertNotSentTo($owner, VerifyEmailForNewUser::class);
+});
+
+test('a member cannot resend verification', function () {
+    Notification::fake();
+
+    actingAs(User::factory()->withRole(Role::Member)->create());
+    $user = User::factory()->unverified()->create();
+
+    Livewire::test(Index::class)
+        ->call('resendVerification', $user->id)
+        ->assertForbidden();
+
+    Notification::assertNotSentTo($user, VerifyEmailForNewUser::class);
+});
+
+test('the resend verification action only appears for unverified users to managers', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+
+    User::factory()->unverified()->create();
+    User::factory()->withRole(Role::Owner)->unverified()->create();
+    User::factory()->create();
+
+    expect(substr_count(Livewire::test(Index::class)->html(), __('Resend verification')))->toBe(1);
+
+    actingAs(User::factory()->withRole(Role::Member)->create(), 'web');
+
+    expect(substr_count(Livewire::test(Index::class)->html(), __('Resend verification')))->toBe(0);
 });
 
 test('editing to a mixed-case duplicate email fails validation', function () {
@@ -313,6 +394,213 @@ test('a member cannot remove a user through the confirmation modal', function ()
     expect($user->fresh())->not->toBeNull();
 });
 
+test('an admin can remove the selected users', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $users = User::factory()->count(3)->create();
+
+    Livewire::test(Index::class)
+        ->set('selected', $users->pluck('id')->all())
+        ->call('confirmDeleteSelected')
+        ->assertSet('showBatchDeleteModal', true)
+        ->call('deleteSelectedConfirmed')
+        ->assertHasNoErrors()
+        ->assertSet('showBatchDeleteModal', false)
+        ->assertSet('selected', [])
+        ->assertDispatched('toast-show', fn (string $name, array $params) => ($params['dataset']['variant'] ?? null) === 'success'
+            && ($params['slots']['text'] ?? null) === __(':count users deleted successfully.', ['count' => 3]));
+
+    expect(User::query()->whereKey($users->pluck('id'))->count())->toBe(0);
+});
+
+test('the user table refreshes after bulk deletion', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $deleted = User::factory()->create(['name' => 'Deleted User']);
+    $kept = User::factory()->create(['name' => 'Kept User']);
+
+    Livewire::test(Index::class)
+        ->set('selected', [$deleted->id])
+        ->call('deleteSelected')
+        ->assertHasNoErrors()
+        ->assertDontSee('Deleted User')
+        ->assertSee('Kept User');
+});
+
+test('deleting selected users reports a failure when nothing was deleted', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+
+    Livewire::test(Index::class)
+        ->set('selected', [999999])
+        ->call('deleteSelected')
+        ->assertHasNoErrors()
+        ->assertSet('selected', [999999])
+        ->assertDispatched('toast-show', fn (string $name, array $params) => ($params['dataset']['variant'] ?? null) === 'danger');
+});
+
+test('bulk deletion ignores selected users outside the current page', function () {
+    $actor = User::factory()->withRole(Role::Admin)->create();
+    $olderMember = User::factory()->withRole(Role::Member)->create(['created_at' => now()->subDay()]);
+    User::factory()->count(10)->withRole(Role::Member)->create(['created_at' => now()]);
+
+    actingAs($actor);
+
+    Livewire::test(Index::class)
+        ->set('selected', [$olderMember->id])
+        ->call('deleteSelected')
+        ->assertHasNoErrors()
+        ->assertSet('selected', [$olderMember->id])
+        ->assertDispatched('toast-show', fn (string $name, array $params) => ($params['dataset']['variant'] ?? null) === 'danger');
+
+    expect($olderMember->fresh())->not->toBeNull();
+});
+
+test('the batch action dropdown only appears when rows are selected', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $user = User::factory()->create();
+
+    Livewire::test(Index::class)
+        ->assertDontSee(__('Delete selected users'))
+        ->set('selected', [$user->id])
+        ->assertSee(__('Delete selected users'));
+});
+
+test('a member cannot remove selected users', function () {
+    actingAs(User::factory()->withRole(Role::Member)->create());
+    $users = User::factory()->count(2)->create();
+
+    Livewire::test(Index::class)
+        ->set('selected', $users->pluck('id')->all())
+        ->call('deleteSelected')
+        ->assertForbidden();
+
+    expect(User::query()->whereKey($users->pluck('id'))->count())->toBe(2);
+});
+
+test('an admin cannot bulk delete themselves or an owner', function () {
+    $admin = User::factory()->withRole(Role::Admin)->create();
+    $owner = User::factory()->withRole(Role::Owner)->create();
+
+    actingAs($admin);
+
+    Livewire::test(Index::class)
+        ->set('selected', [$admin->id])
+        ->call('deleteSelected')
+        ->assertForbidden();
+
+    expect($admin->fresh())->not->toBeNull();
+
+    Livewire::test(Index::class)
+        ->set('selected', [$owner->id])
+        ->call('deleteSelected')
+        ->assertForbidden();
+
+    expect($owner->fresh())->not->toBeNull();
+});
+
+test('the table exposes selectable rows to managers only', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    User::factory()->create(['name' => 'Selectable User']);
+
+    Livewire::test(Index::class)
+        ->assertSeeHtml('aria-label="Pilih semua pengguna"')
+        ->assertSeeHtml('aria-label="Pilih Selectable User"');
+
+    actingAs(User::factory()->withRole(Role::Member)->create(), 'web');
+
+    Livewire::test(Index::class)
+        ->assertDontSee('Pilih semua pengguna')
+        ->assertDontSee('Pilih Selectable User');
+});
+
+test('the header selection state reflects the selectable rows', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $users = User::factory()->count(2)->create();
+
+    Livewire::test(Index::class)
+        ->assertSet('allSelected', false)
+        ->assertSet('someSelected', false)
+        ->set('selected', [$users->first()->id])
+        ->assertSet('allSelected', false)
+        ->assertSet('someSelected', true)
+        ->set('selected', $users->pluck('id')->all())
+        ->assertSet('allSelected', true)
+        ->assertSet('someSelected', false);
+});
+
+test('the select all checkbox toggles the selectable rows', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $users = User::factory()->count(2)->create();
+
+    Livewire::test(Index::class)
+        ->call('toggleSelectAll')
+        ->assertSet('selected', $users->pluck('id')->all())
+        ->assertSet('allSelected', true)
+        ->assertSet('someSelected', false)
+        ->call('toggleSelectAll')
+        ->assertSet('selected', [])
+        ->assertSet('allSelected', false)
+        ->assertSet('someSelected', false);
+});
+
+test('selecting a row is cleared when the page changes', function () {
+    actingAs(User::factory()->create());
+    User::factory()->count(14)->create();
+
+    Livewire::test(Index::class)
+        ->set('selected', [1])
+        ->call('gotoPage', 2)
+        ->assertSet('selected', []);
+});
+
+test('users are ordered by creation date newest first', function () {
+    $actor = User::factory()->create(['created_at' => now()->subDays(5)]);
+    $older = User::factory()->create(['created_at' => now()->subDay()]);
+    $newer = User::factory()->create(['created_at' => now()]);
+
+    actingAs($actor);
+
+    Livewire::test(Index::class)
+        ->assertSet('sortDirection', 'desc')
+        ->assertViewHas('users', fn ($users) => $users->pluck('id')->all() === [$newer->id, $older->id, $actor->id]);
+});
+
+test('the created at column can be sorted', function () {
+    $actor = User::factory()->create(['created_at' => now()->subDays(5)]);
+    $older = User::factory()->create(['created_at' => now()->subDay()]);
+    $newer = User::factory()->create(['created_at' => now()]);
+
+    actingAs($actor);
+
+    Livewire::test(Index::class)
+        ->call('sortByCreatedAt')
+        ->assertSet('sortDirection', 'asc')
+        ->assertViewHas('users', fn ($users) => $users->pluck('id')->all() === [$actor->id, $older->id, $newer->id])
+        ->call('sortByCreatedAt')
+        ->assertSet('sortDirection', 'desc')
+        ->assertViewHas('users', fn ($users) => $users->pluck('id')->all() === [$newer->id, $older->id, $actor->id]);
+});
+
+test('sorting returns to the first page', function () {
+    actingAs(User::factory()->create());
+    User::factory()->count(14)->create();
+
+    Livewire::test(Index::class)
+        ->call('gotoPage', 2)
+        ->call('sortByCreatedAt')
+        ->assertViewHas('users', fn ($users) => $users->currentPage() === 1);
+});
+
+test('the edit user modal is a floating right-side flyout with a bottom footer', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $user = User::factory()->create();
+
+    Livewire::test(Edit::class, ['user' => $user])
+        ->assertSeeHtml('data-flux-flyout')
+        ->assertSeeHtml('ml-auto')
+        ->assertSeeHtml('rounded-xl')
+        ->assertSeeHtml('min-h-[calc(100dvh-5rem)]')
+        ->assertSeeHtml('mt-auto');
+});
+
 test('a member cannot edit or remove users', function () {
     actingAs(User::factory()->withRole(Role::Member)->create());
     $user = User::factory()->create();
@@ -519,6 +807,59 @@ test('a new user email cannot be verified with an invalid hash', function () {
     expect($user->fresh()->hasVerifiedEmail())->toBeFalse();
 });
 
+describe('database session cleanup on user deletion', function () {
+    beforeEach(function () {
+        /** @var TestCase $this */
+        $this->sessionConnection = config('database.default');
+        $this->sessionTable = 'test_sessions';
+
+        config([
+            'session.driver' => 'database',
+            'session.connection' => $this->sessionConnection,
+            'session.table' => $this->sessionTable,
+        ]);
+
+        Schema::connection($this->sessionConnection)->dropIfExists($this->sessionTable);
+
+        (require database_path('migrations/0001_01_01_000002_create_sessions_table.php'))->up();
+    });
+
+    afterEach(function () {
+        /** @var TestCase $this */
+        Schema::connection($this->sessionConnection)->dropIfExists($this->sessionTable);
+    });
+
+    test('individual user deletion removes their database sessions', function () {
+        actingAs(User::factory()->withRole(Role::Admin)->create());
+        $member = User::factory()->withRole(Role::Member)->create();
+
+        createTestDatabaseSessionFor($member);
+
+        Livewire::test(Index::class)->call('deleteUser', $member->id);
+
+        /** @var TestCase $this */
+        expect($member->fresh())->toBeNull()
+            ->and(DB::connection($this->sessionConnection)->table($this->sessionTable)->where('user_id', $member->id)->exists())->toBeFalse();
+    });
+
+    test('batch user deletion removes database sessions for every deleted user', function () {
+        actingAs(User::factory()->withRole(Role::Admin)->create());
+        $members = User::factory()->count(2)->withRole(Role::Member)->create();
+
+        foreach ($members as $member) {
+            createTestDatabaseSessionFor($member);
+        }
+
+        Livewire::test(Index::class)
+            ->set('selected', $members->pluck('id')->all())
+            ->call('deleteSelected');
+
+        /** @var TestCase $this */
+        expect(User::query()->whereKey($members->pluck('id'))->count())->toBe(0)
+            ->and(DB::connection($this->sessionConnection)->table($this->sessionTable)->whereIn('user_id', $members->pluck('id'))->count())->toBe(0);
+    });
+});
+
 test('an authenticated user sees instructions for a used invitation link', function () {
     $invited = User::factory()->create();
     actingAs(User::factory()->create());
@@ -555,3 +896,15 @@ test('a verified user cannot get a password reset token from a verification link
 
     expect(DB::table('password_reset_tokens')->where('email', $user->email)->exists())->toBeFalse();
 });
+
+function createTestDatabaseSessionFor(User $user): void
+{
+    DB::connection(config('database.default'))->table(config('session.table'))->insert([
+        'id' => Str::random(40),
+        'user_id' => $user->id,
+        'ip_address' => '127.0.0.1',
+        'user_agent' => 'Pest',
+        'payload' => base64_encode(serialize([])),
+        'last_activity' => now()->getTimestamp(),
+    ]);
+}

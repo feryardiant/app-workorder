@@ -11,7 +11,9 @@ use App\Models\User;
 use App\Notifications\VerifyEmailForNewUser;
 use Flux\Flux;
 use Illuminate\Contracts\View\View;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
@@ -19,7 +21,11 @@ use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Throwable;
 
+/**
+ * @property-read LengthAwarePaginator<int, User> $users
+ */
 #[Title('Users')]
 class Index extends Component
 {
@@ -28,6 +34,8 @@ class Index extends Component
     public bool $showCreateModal = false;
 
     public bool $showDeleteModal = false;
+
+    public bool $showBatchDeleteModal = false;
 
     public bool $showRoleModal = false;
 
@@ -42,6 +50,22 @@ class Index extends Component
     public string $email = '';
 
     public int $role = Role::Member->value;
+
+    /**
+     * @var array<int, int|string>
+     */
+    public array $selected = [];
+
+    public int $selectionKey = 0;
+
+    public bool $allSelected = false;
+
+    public bool $someSelected = false;
+
+    /**
+     * @var 'asc'|'desc'
+     */
+    public string $sortDirection = 'desc';
 
     public function createUser(): void
     {
@@ -83,9 +107,37 @@ class Index extends Component
         $this->showDeleteModal = true;
     }
 
+    public function confirmDeleteSelected(): void
+    {
+        $this->showBatchDeleteModal = true;
+    }
+
+    public function deleteSelectedConfirmed(): void
+    {
+        $this->deleteSelected();
+
+        $this->reset('showBatchDeleteModal');
+    }
+
     public function openEdit(User $user): void
     {
         $this->dispatch('edit-user', userId: $user->id);
+    }
+
+    public function resendVerification(User $user): void
+    {
+        $actor = Auth::user();
+
+        abort_unless($actor instanceof User && $actor->role->canManageUsers(), 403);
+        abort_if($user->hasVerifiedEmail(), 422);
+        abort_if($user->role->isOwner() && ! $actor->role->isOwner(), 403);
+
+        $user->notify(new VerifyEmailForNewUser);
+
+        Flux::toast(
+            variant: 'success',
+            text: __('Verification email resent to :email.', ['email' => $user->email]),
+        );
     }
 
     public function confirmPromote(User $user): void
@@ -216,10 +268,120 @@ class Index extends Component
         //
     }
 
+    public function updatedPage(): void
+    {
+        $this->selected = [];
+        $this->allSelected = false;
+        $this->someSelected = false;
+    }
+
+    public function updatedSelected(): void
+    {
+        $pageIds = $this->selectablePageIds();
+        $selected = array_map('intval', $this->selected);
+
+        $this->allSelected = $pageIds !== [] && array_diff($pageIds, $selected) === [];
+        $this->someSelected = ! $this->allSelected && array_intersect($pageIds, $selected) !== [];
+    }
+
+    public function toggleSelectAll(): void
+    {
+        $pageIds = $this->selectablePageIds();
+        $selected = array_map('intval', $this->selected);
+
+        $this->selected = array_diff($pageIds, $selected) === [] ? [] : $pageIds;
+        $this->selectionKey++;
+        $this->updatedSelected();
+    }
+
+    public function sortByCreatedAt(): void
+    {
+        $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        $this->resetPage();
+    }
+
+    public function deleteSelected(): void
+    {
+        $actor = Auth::user();
+
+        abort_unless($actor instanceof User && $actor->role->canManageUsers(), 403);
+
+        $pageIds = $this->users->pluck('id')->all();
+        $selected = array_values(array_intersect(array_map('intval', $this->selected), $pageIds));
+
+        $users = User::query()->whereKey($selected)->get();
+
+        foreach ($users as $user) {
+            abort_if(
+                $user->is($actor) || ($user->role->isOwner() && ! $actor->role->isOwner()),
+                403,
+            );
+        }
+
+        $deleted = false;
+
+        try {
+            if ($users->isNotEmpty()) {
+                DB::transaction(fn () => $users->each->delete());
+
+                $deleted = true;
+            }
+        } catch (Throwable $exception) {
+            report($exception);
+
+            $deleted = false;
+        }
+
+        if (! $deleted) {
+            Flux::toast(variant: 'danger', text: __('Failed to delete the selected users.'));
+
+            return;
+        }
+
+        $this->reset('selected', 'allSelected', 'someSelected');
+        $this->selectionKey++;
+        $this->resetPage();
+        unset($this->users);
+
+        Flux::toast(
+            variant: 'success',
+            text: __(':count users deleted successfully.', ['count' => $users->count()]),
+        );
+    }
+
     public function render(): View
     {
         return view('livewire.users.index', [
-            'users' => User::query()->latest()->paginate(10),
+            'users' => $this->users,
         ]);
+    }
+
+    /**
+     * @return LengthAwarePaginator<int, User>
+     */
+    #[Computed]
+    public function users(): LengthAwarePaginator
+    {
+        return User::query()
+            ->orderBy('created_at', $this->sortDirection)
+            ->orderBy('id')
+            ->paginate(10);
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    private function selectablePageIds(): array
+    {
+        $actor = Auth::user();
+
+        if (! $actor instanceof User || ! $actor->role->canManageUsers()) {
+            return [];
+        }
+
+        return $this->users
+            ->filter(fn (User $user): bool => ! $user->is($actor) && ($actor->role->isOwner() || ! $user->role->isOwner()))
+            ->pluck('id')
+            ->all();
     }
 }
