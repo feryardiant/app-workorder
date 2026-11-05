@@ -290,7 +290,10 @@ class Index extends Component
 
         abort_unless($actor instanceof User && $actor->role->canManageUsers(), 403);
 
-        $users = User::query()->whereKey($this->selected)->get();
+        $pageIds = $this->users->pluck('id')->all();
+        $selected = array_values(array_intersect(array_map('intval', $this->selected), $pageIds));
+
+        $users = User::query()->whereKey($selected)->get();
 
         foreach ($users as $user) {
             abort_if(
@@ -307,19 +310,21 @@ class Index extends Component
 
                 $deleted = true;
             }
-        } catch (Throwable) {
+        } catch (Throwable $exception) {
+            report($exception);
+
             $deleted = false;
         }
-
-        $this->reset('selected', 'allSelected', 'someSelected');
-        $this->selectionKey++;
-        $this->resetPage();
 
         if (! $deleted) {
             Flux::toast(variant: 'danger', text: __('Failed to delete the selected users.'));
 
             return;
         }
+
+        $this->reset('selected', 'allSelected', 'someSelected');
+        $this->selectionKey++;
+        $this->resetPage();
 
         Flux::toast(
             variant: 'success',

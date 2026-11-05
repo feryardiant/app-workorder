@@ -340,7 +340,25 @@ test('deleting selected users reports a failure when nothing was deleted', funct
         ->set('selected', [999999])
         ->call('deleteSelected')
         ->assertHasNoErrors()
+        ->assertSet('selected', [999999])
         ->assertDispatched('toast-show', fn (string $name, array $params) => ($params['dataset']['variant'] ?? null) === 'danger');
+});
+
+test('bulk deletion ignores selected users outside the current page', function () {
+    $actor = User::factory()->withRole(Role::Admin)->create();
+    $olderMember = User::factory()->withRole(Role::Member)->create(['created_at' => now()->subDay()]);
+    User::factory()->count(10)->withRole(Role::Member)->create(['created_at' => now()]);
+
+    actingAs($actor);
+
+    Livewire::test(Index::class)
+        ->set('selected', [$olderMember->id])
+        ->call('deleteSelected')
+        ->assertHasNoErrors()
+        ->assertSet('selected', [$olderMember->id])
+        ->assertDispatched('toast-show', fn (string $name, array $params) => ($params['dataset']['variant'] ?? null) === 'danger');
+
+    expect($olderMember->fresh())->not->toBeNull();
 });
 
 test('the batch action dropdown only appears when rows are selected', function () {
