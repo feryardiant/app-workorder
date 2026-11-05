@@ -341,6 +341,7 @@ class Index extends Component
         $this->reset('selected', 'allSelected', 'someSelected');
         $this->selectionKey++;
         $this->resetPage();
+        unset($this->users);
 
         Flux::toast(
             variant: 'success',

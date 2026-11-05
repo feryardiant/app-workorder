@@ -412,6 +412,19 @@ test('an admin can remove the selected users', function () {
     expect(User::query()->whereKey($users->pluck('id'))->count())->toBe(0);
 });
 
+test('the user table refreshes after bulk deletion', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $deleted = User::factory()->create(['name' => 'Deleted User']);
+    $kept = User::factory()->create(['name' => 'Kept User']);
+
+    Livewire::test(Index::class)
+        ->set('selected', [$deleted->id])
+        ->call('deleteSelected')
+        ->assertHasNoErrors()
+        ->assertDontSee('Deleted User')
+        ->assertSee('Kept User');
+});
+
 test('deleting selected users reports a failure when nothing was deleted', function () {
     actingAs(User::factory()->withRole(Role::Admin)->create());
 
