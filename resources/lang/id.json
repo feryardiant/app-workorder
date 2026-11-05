@@ -117,6 +117,8 @@
     "Settings": "Pengaturan",
     "Setup key": "Kunci penyiapan",
     "Showing": "Menampilkan",
+    "Successfully mark :count notification as read": "Berhasil menandai :count notifikasi sebagai sudah dibaca",
+    "Successfully mark :count notification as unread": "Berhasil menandai :count notifikasi sebagai belum dibaca",
     "System": "Sistem",
     "The last owner cannot delete their account.": "Pemilik terakhir tidak dapat menghapus akunnya.",
     "This is a secure area of the application. Please confirm your password before continuing.": "Ini adalah area aman aplikasi. Silakan konfirmasi kata sandi Anda sebelum melanjutkan.",

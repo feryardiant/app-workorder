@@ -109,14 +109,16 @@ test('selected notifications can be marked as read or unread', function () {
     Livewire::test(Index::class)
         ->set('selectedNotifications', $ids)
         ->call('markSelectedAsRead')
-        ->assertDispatched('notifications-updated', count: 0);
+        ->assertDispatched('notifications-updated', count: 0)
+        ->assertDispatched('toast-show', fn (string $name, array $params) => ($params['slots']['text'] ?? null) === __('Successfully mark :count notification as read', ['count' => 2]));
 
     expect($user->notifications()->whereNull('read_at')->count())->toBe(0);
 
     Livewire::test(Index::class)
         ->set('selectedNotifications', $ids)
         ->call('markSelectedAsUnread')
-        ->assertDispatched('notifications-updated', count: 2);
+        ->assertDispatched('notifications-updated', count: 2)
+        ->assertDispatched('toast-show', fn (string $name, array $params) => ($params['slots']['text'] ?? null) === __('Successfully mark :count notification as unread', ['count' => 2]));
 
     expect($user->notifications()->whereNotNull('read_at')->count())->toBe(0);
 });

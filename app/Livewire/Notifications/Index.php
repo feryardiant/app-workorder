@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Notifications;
 
 use App\Models\User;
+use Flux\Flux;
 use Illuminate\Contracts\View\View;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Auth;
@@ -152,11 +153,18 @@ class Index extends Component
         /** @var User $user */
         $user = Auth::user();
 
-        $user->notifications()
+        $count = $user->notifications()
             ->whereIn('id', $this->selectedNotifications)
             ->update(['read_at' => $asRead ? now() : null]);
 
         $this->selectedNotifications = [];
+
+        Flux::toast(
+            variant: 'success',
+            text: $asRead
+                ? __('Successfully mark :count notification as read', ['count' => $count])
+                : __('Successfully mark :count notification as unread', ['count' => $count]),
+        );
 
         $this->dispatchUnreadCount();
     }
