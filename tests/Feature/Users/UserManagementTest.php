@@ -321,8 +321,11 @@ test('an admin can remove the selected users', function () {
 
     Livewire::test(Index::class)
         ->set('selected', $users->pluck('id')->all())
-        ->call('deleteSelected')
+        ->call('confirmDeleteSelected')
+        ->assertSet('showBatchDeleteModal', true)
+        ->call('deleteSelectedConfirmed')
         ->assertHasNoErrors()
+        ->assertSet('showBatchDeleteModal', false)
         ->assertSet('selected', [])
         ->assertDispatched('toast-show', fn (string $name, array $params) => ($params['dataset']['variant'] ?? null) === 'success'
             && ($params['slots']['text'] ?? null) === __(':count users deleted successfully.', ['count' => 3]));

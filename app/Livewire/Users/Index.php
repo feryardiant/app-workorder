@@ -35,6 +35,8 @@ class Index extends Component
 
     public bool $showDeleteModal = false;
 
+    public bool $showBatchDeleteModal = false;
+
     public bool $showRoleModal = false;
 
     public ?int $deletingUserId = null;
@@ -103,6 +105,18 @@ class Index extends Component
     {
         $this->deletingUserId = $user->id;
         $this->showDeleteModal = true;
+    }
+
+    public function confirmDeleteSelected(): void
+    {
+        $this->showBatchDeleteModal = true;
+    }
+
+    public function deleteSelectedConfirmed(): void
+    {
+        $this->deleteSelected();
+
+        $this->reset('showBatchDeleteModal');
     }
 
     public function openEdit(User $user): void

@@ -6,7 +6,7 @@
         </div>
 
         @if (auth()->user()->role->canManageUsers())
-            <div class="flex items-center gap-2">
+            <div class="hidden items-center gap-2 sm:flex">
                 <flux:button variant="primary" icon="plus" wire:click="$set('showCreateModal', true)">
                     {{ __('Add user') }}
                 </flux:button>
@@ -21,8 +21,7 @@
                             <flux:menu.item
                                 variant="danger"
                                 icon="trash"
-                                wire:click="deleteSelected"
-                                wire:confirm="{{ __('Delete selected users? This cannot be undone.') }}"
+                                wire:click="confirmDeleteSelected"
                             >
                                 {{ __('Delete selected users') }}
                             </flux:menu.item>
@@ -30,6 +29,32 @@
                     </flux:dropdown>
                 @endif
             </div>
+
+            <flux:dropdown align="end" class="sm:hidden">
+                <flux:button
+                    icon="ellipsis-horizontal"
+                    square
+                    :aria-label="__('Actions')"
+                />
+
+                <flux:menu>
+                    <flux:menu.item icon="plus" wire:click="$set('showCreateModal', true)">
+                        {{ __('Add user') }}
+                    </flux:menu.item>
+
+                    @if ($selected !== [])
+                        <flux:menu.separator />
+
+                        <flux:menu.item
+                            variant="danger"
+                            icon="trash"
+                            wire:click="confirmDeleteSelected"
+                        >
+                            {{ __('Delete selected users') }}
+                        </flux:menu.item>
+                    @endif
+                </flux:menu>
+            </flux:dropdown>
         @endif
     </div>
 
@@ -82,7 +107,7 @@
                 >
                     {{ __('Registered at') }}
                 </flux:table.column>
-                <flux:table.column align="end">{{ __('Actions') }}</flux:table.column>
+                <flux:table.column align="center">{{ __('Actions') }}</flux:table.column>
             </flux:table.columns>
 
             <flux:table.rows>
@@ -105,9 +130,9 @@
                                 >
                                     <span
                                         @class([
-                                            'relative inline-flex size-8 shrink-0 items-center justify-center transition-opacity',
+                                            'relative inline-flex ml-1 size-8 shrink-0 items-center justify-center transition-opacity',
                                             'opacity-0' => $isSelected,
-                                            'group-hover/row:opacity-0 group-focus-within/row:opacity-0' => ! $isSelected,
+                                            'group-hover/row:opacity-0 group-focus-within/row:opacity-0' => ! $isSelected && $canManageUser,
                                         ])
                                         aria-hidden="true"
                                     >
@@ -122,7 +147,7 @@
                                 @endif
 
                                 @if ($canManageUser)
-                                    <span class="absolute left-0 top-1/2 z-10 -translate-y-1/2">
+                                    <span class="absolute left-1 top-1/2 z-10 flex size-8 -translate-y-1/2 items-center justify-center">
                                         <flux:checkbox
                                             value="{{ $user->id }}"
                                             :aria-label="__('Select :name', ['name' => $user->name])"
@@ -152,7 +177,7 @@
                             {{ $user->created_at?->toFormattedDateString() ?? '—' }}
                         </flux:table.cell>
 
-                        <flux:table.cell align="end" class="w-1/12">
+                        <flux:table.cell align="center" class="w-1/12">
                             @if ($canManageUser)
                                 <flux:dropdown align="end">
                                     <flux:button
@@ -260,6 +285,31 @@
 
                 <flux:button variant="danger" wire:click="deleteConfirmed">
                     {{ __('Remove user') }}
+                </flux:button>
+            </div>
+        </div>
+    </flux:modal>
+
+    <flux:modal
+        wire:model.self="showBatchDeleteModal"
+        class="md:w-96"
+        x-init="$el.querySelector('dialog')?.setAttribute('aria-labelledby', 'delete-selected-users-heading')"
+    >
+        <div class="space-y-6">
+            <div>
+                <flux:heading id="delete-selected-users-heading" size="lg">{{ __('Remove users') }}</flux:heading>
+                <flux:subheading>
+                    {{ __('Remove :count selected users? This cannot be undone.', ['count' => count($selected)]) }}
+                </flux:subheading>
+            </div>
+
+            <div class="flex items-center justify-between">
+                <flux:modal.close>
+                    <flux:button variant="subtle">{{ __('Cancel') }}</flux:button>
+                </flux:modal.close>
+
+                <flux:button variant="danger" wire:click="deleteSelectedConfirmed">
+                    {{ __('Remove users') }}
                 </flux:button>
             </div>
         </div>
