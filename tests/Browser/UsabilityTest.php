@@ -115,6 +115,22 @@ it('selects users by tapping the checkbox on touch screens', function () {
         ->assertScript('document.querySelector("ui-checkbox[value]").getAttribute("aria-checked") === "true"');
 });
 
+it('selects a user when tapping the checkbox wrapper', function () {
+    $owner = User::factory()->withRole(Role::Owner)->create();
+    User::factory()->withRole(Role::Member)->create();
+
+    $page = browserLogin($owner, 'mobile')->navigate('/users');
+
+    $page->script(<<<'JS'
+        document.querySelector('[data-flux-row]:has(ui-checkbox) span.absolute')
+            .dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }))
+        JS);
+    $page->wait(0.4);
+
+    $page->assertPathIs('/users')
+        ->assertScript('document.querySelector("ui-checkbox[value]").getAttribute("aria-checked") === "true"');
+});
+
 it('selects notifications by tapping the checkbox on touch screens', function () {
     $owner = User::factory()->create();
     $owner->notify(new UserRoleChangedNotification(User::factory()->create(), Role::Admin));

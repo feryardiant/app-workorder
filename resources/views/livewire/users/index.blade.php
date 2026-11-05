@@ -147,7 +147,10 @@
                                 @endif
 
                                 @if ($canManageUser)
-                                    <span class="absolute left-0 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center">
+                                    <span
+                                        class="absolute left-0 top-1/2 z-10 flex size-10 -translate-y-1/2 items-center justify-center"
+                                        x-on:click="if (! $event.target.closest('ui-checkbox')) { $event.stopPropagation(); $el.querySelector('ui-checkbox').click() }"
+                                    >
                                         <flux:checkbox
                                             value="{{ $user->id }}"
                                             :aria-label="__('Select :name', ['name' => $user->name])"
