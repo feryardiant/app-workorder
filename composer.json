@@ -1,8 +1,8 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "feryardiant/app-workorder",
+    "name": "feryardiant/laravel-template",
     "type": "project",
-    "description": "Workorder Application.",
+    "description": "Laravel Application Template.",
     "keywords": [],
     "license": "MIT",
     "require": {

@@ -1,4 +1,4 @@
-name: workorder
+name: laravel-template
 
 services:
   app:
@@ -8,7 +8,7 @@ services:
     build:
       context: .
       dockerfile: scripts/docker/development/Dockerfile
-    image: ghcr.io/feryardiant/app-workorder:local
+    image: ghcr.io/feryardiant/laravel-template:local
     ports:
       - ${APP_PORT:-8080}:8080
       - ${DEV_PORT:-5173}:5173
@@ -45,7 +45,7 @@ services:
 
 networks:
   default:
-    # name: app-workorder
+    # name: laravel-template
     enable_ipv6: false
 
 volumes:

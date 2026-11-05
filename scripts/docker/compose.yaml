@@ -38,7 +38,7 @@ services:
           memory: 512m
 
   worker:
-    image: ghcr.io/feryardiant/workorder:staging
+    image: ghcr.io/feryardiant/laravel-template:staging
     pull_policy: never
     depends_on:
       app:

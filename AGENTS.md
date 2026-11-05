@@ -1,4 +1,4 @@
-# Workorder Application
+# Laravel Template
 
 Laravel 13 / PHP 8.4 app. UI is Blade + Livewire 4 + Flux UI 2 + Tailwind 4; auth is Fortify. Core domain: role-based user management and a database-backed notification inbox.
 

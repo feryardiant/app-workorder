@@ -20,6 +20,7 @@ storage/pail
 .devcontainer
 .vite-hooks
 .dockerignore
+.playwright-mcp
 .pnpm-store
 .npmrc
 _ide_helper.php

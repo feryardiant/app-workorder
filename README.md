@@ -1,4 +1,4 @@
-# Workorder Application
+# Laravel Template
 
 ## Stack
 
@@ -8,4 +8,4 @@
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Thit project is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).

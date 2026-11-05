@@ -13,6 +13,7 @@ fi
 copies=(
     ".env"
     ".env.testing"
+    "boost.json"
 )
 
 links=(
