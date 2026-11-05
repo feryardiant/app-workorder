@@ -118,7 +118,7 @@
 
                     <flux:table.row
                         :key="$user->id"
-                        class="group/row cursor-pointer {{ $isCurrentUser ? 'bg-zinc-100/60 dark:bg-zinc-700/30' : '' }}"
+                        class="group/row cursor-pointer hover:bg-zinc-100/60 dark:hover:bg-zinc-700/30"
                         x-on:click="if (! $event.target.closest('a, button, input, ui-checkbox, ui-dropdown')) window.Livewire.navigate('{{ route('users.show', $user) }}')"
                     >
                         <flux:table.cell class="w-7/12">
