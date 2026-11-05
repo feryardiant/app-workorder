@@ -77,7 +77,9 @@ it('mutes read notification titles and descriptions', function () {
                 const unread = items.find((item) => item.state === 'unread');
 
                 return contrast(read.title) < contrast(unread.title)
-                    && contrast(read.description) < contrast(unread.description);
+                    && contrast(read.description) < contrast(unread.description)
+                    && contrast(read.title) >= 4.5
+                    && contrast(read.description) >= 4.5;
             })()
             JS);
 });

@@ -133,8 +133,8 @@
 
                                 <div @class([
                                     'text-sm',
-                                    'text-zinc-500 dark:text-zinc-400' => $isUnread,
-                                    'text-zinc-400 dark:text-zinc-500' => ! $isUnread,
+                                    'text-zinc-600 dark:text-zinc-300' => $isUnread,
+                                    'text-zinc-500 dark:text-zinc-400' => ! $isUnread,
                                 ])>
                                     {{ $notification->data['description'] ?? '' }}
                                 </div>

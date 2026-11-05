@@ -55,6 +55,8 @@ it('moves focus into a modal and back to its trigger', function () {
 it('has no serious accessibility issues on the notifications page', function (string $device) {
     $owner = User::factory()->withRole(Role::Owner)->create();
     $owner->notify(new UserRoleChangedNotification(User::factory()->create(), Role::Admin));
+    $owner->notify(new UserRoleChangedNotification(User::factory()->create(), Role::Member));
+    $owner->notifications()->latest()->first()->markAsRead();
 
     browserLogin($owner, $device)
         ->navigate('/notifications')
