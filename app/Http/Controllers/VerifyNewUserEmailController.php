@@ -24,9 +24,13 @@ class VerifyNewUserEmailController extends Controller
             403,
         );
 
-        if (! $user->hasVerifiedEmail() && $user->markEmailAsVerified()) {
-            event(new Verified($user));
+        if ($user->hasVerifiedEmail()) {
+            return redirect()->route('login');
         }
+
+        $user->markEmailAsVerified();
+
+        event(new Verified($user));
 
         return redirect()->route('password.reset', [
             'token' => Password::broker()->createToken($user),

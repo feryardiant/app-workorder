@@ -29,6 +29,7 @@ test('the notifications page lists only the current user notifications', functio
     get(route('notifications.index'))
         ->assertOk()
         ->assertSee(__('Your role at :app has changed', ['app' => config('app.name')]))
+        ->assertSee(__('Unread'))
         ->assertSee($actor->name);
 
     Livewire::test(Index::class)
@@ -177,8 +178,19 @@ test('email verification notifications are stored in the database', function () 
     expect($notification->type)->toBe(VerifyEmailForNewUser::class)
         ->and($notification->data['title'])->toBe(__('Verify your email address'))
         ->and($notification->data['greeting'])->toBe(__('Hello!'))
-        ->and($notification->data['description'])->toBe(__('Please click the button below to verify your email address.'))
-        ->and($notification->data['action']['label'])->toBe(__('Verify email address'))
-        ->and($notification->data['action']['url'])->toBeString()
+        ->and($notification->data['description'])->toBe(__('Please verify your email address by clicking on the link we just emailed to you.'))
+        ->and($notification->data)->not->toHaveKey('action')
         ->and($notification->data['salutation'])->toBe(__('Regards, :app', ['app' => config('app.name')]));
+});
+
+test('a user notifications are deleted with the account', function () {
+    $user = User::factory()->create();
+
+    $user->notify(new UserRoleChangedNotification(User::factory()->create(), Role::Admin));
+
+    expect($user->notifications()->count())->toBe(1);
+
+    $user->delete();
+
+    expect($user->notifications()->count())->toBe(0);
 });

@@ -101,7 +101,7 @@
                                     type="button"
                                     role="checkbox"
                                     aria-checked="{{ $isSelected ? 'true' : 'false' }}"
-                                    aria-label="{{ __('Select notification') }}: {{ $notification->data['title'] ?? '' }}"
+                                    aria-label="{{ __('Select notification') }}: {{ $notification->data['title'] ?? '' }} ({{ $isUnread ? __('Unread') : __('Read') }})"
                                     wire:click.stop="toggleSelected('{{ $notification->id }}')"
                                     @class([
                                         'absolute inset-0 z-10 flex items-center justify-center rounded-[.3rem] border transition-opacity',
@@ -123,6 +123,7 @@
                                     wire:click.stop="openNotification('{{ $notification->id }}')"
                                     class="text-left font-medium focus-visible:underline focus-visible:outline-none"
                                 >
+                                    <span class="sr-only">{{ $isUnread ? __('Unread') : __('Read') }}:</span>
                                     {{ $notification->data['title'] ?? '' }}
                                 </button>
 

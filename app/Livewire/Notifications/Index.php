@@ -187,6 +187,7 @@ class Index extends Component
 
         return $user->notifications()
             ->reorder('created_at', $this->sortAscending ? 'asc' : 'desc')
+            ->orderBy('id', $this->sortAscending ? 'asc' : 'desc')
             ->forPage($this->getPage(), 10)
             ->pluck('id')
             ->map(fn ($id): string => (string) $id)
@@ -214,6 +215,7 @@ class Index extends Component
         return view('livewire.notifications.index', [
             'notifications' => $user->notifications()
                 ->reorder('created_at', $this->sortAscending ? 'asc' : 'desc')
+                ->orderBy('id', $this->sortAscending ? 'asc' : 'desc')
                 ->paginate(10),
         ]);
     }
