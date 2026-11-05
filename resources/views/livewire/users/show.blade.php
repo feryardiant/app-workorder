@@ -19,21 +19,45 @@
         </div>
 
         @if ($canManageUser)
-            <div class="flex items-center gap-2">
+            <div class="hidden items-center gap-2 sm:flex">
                 @if ($user->role->isMember())
-                    <flux:button wire:click="confirmPromote" icon="arrow-up-circle">
+                    <flux:button icon="arrow-up-circle" wire:click="confirmPromote">
                         {{ __('Promote admin') }}
                     </flux:button>
                 @elseif ($user->role->isAdmin())
-                    <flux:button wire:click="confirmDemote" icon="arrow-down-circle">
+                    <flux:button icon="arrow-down-circle" wire:click="confirmDemote">
                         {{ __('Demote admin') }}
                     </flux:button>
                 @endif
 
-                <flux:button variant="primary" wire:click="openEdit" icon="pencil-square">
+                <flux:button variant="primary" icon="pencil-square" wire:click="openEdit">
                     {{ __('Edit user') }}
                 </flux:button>
             </div>
+
+            <flux:dropdown align="end" class="sm:hidden">
+                <flux:button
+                    icon="ellipsis-horizontal"
+                    square
+                    :aria-label="__('Actions for :name', ['name' => $user->name])"
+                />
+
+                <flux:menu>
+                    @if ($user->role->isMember())
+                        <flux:menu.item icon="arrow-up-circle" wire:click="confirmPromote">
+                            {{ __('Promote admin') }}
+                        </flux:menu.item>
+                    @elseif ($user->role->isAdmin())
+                        <flux:menu.item icon="arrow-down-circle" wire:click="confirmDemote">
+                            {{ __('Demote admin') }}
+                        </flux:menu.item>
+                    @endif
+
+                    <flux:menu.item icon="pencil-square" wire:click="openEdit">
+                        {{ __('Edit user') }}
+                    </flux:menu.item>
+                </flux:menu>
+            </flux:dropdown>
         @endif
     </div>
 
