@@ -55,6 +55,41 @@ class Index extends Component
         $this->dispatchUnreadCount();
 
         $this->js(<<<'JS'
+            const trapNotificationModalFocus = (dialog) => {
+                if (dialog.dataset.focusTrapped) {
+                    return;
+                }
+
+                dialog.dataset.focusTrapped = 'true';
+
+                dialog.addEventListener('keydown', (event) => {
+                    if (event.key !== 'Tab') {
+                        return;
+                    }
+
+                    const focusable = Array.from(dialog.querySelectorAll(
+                        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+                    )).filter((element) => element.offsetParent !== null);
+
+                    if (focusable.length === 0) {
+                        event.preventDefault();
+
+                        return;
+                    }
+
+                    const first = focusable[0];
+                    const last = focusable[focusable.length - 1];
+
+                    if (event.shiftKey && document.activeElement === first) {
+                        event.preventDefault();
+                        last.focus();
+                    } else if (! event.shiftKey && document.activeElement === last) {
+                        event.preventDefault();
+                        first.focus();
+                    }
+                });
+            };
+
             const focusNotificationModal = () => {
                 const dialog = document.querySelector('dialog[data-flux-flyout][open]');
 
@@ -68,6 +103,8 @@ class Index extends Component
                     title.id ||= 'notification-modal-title';
                     dialog.setAttribute('aria-labelledby', title.id);
                 }
+
+                trapNotificationModalFocus(dialog);
 
                 dialog.querySelector('[data-flux-modal-close] button')?.focus();
 
