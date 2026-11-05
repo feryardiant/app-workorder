@@ -6,101 +6,229 @@
         </div>
 
         @if (auth()->user()->role->canManageUsers())
-            <flux:button variant="primary" icon="plus" wire:click="$set('showCreateModal', true)">
-                {{ __('Add user') }}
-            </flux:button>
+            <div class="hidden items-center gap-2 sm:flex">
+                <flux:button variant="primary" icon="plus" wire:click="$set('showCreateModal', true)">
+                    {{ __('Add user') }}
+                </flux:button>
+
+                @if ($selected !== [])
+                    <flux:dropdown align="end" class="order-first">
+                        <flux:button icon:trailing="chevron-down">
+                            {{ __('Action') }}
+                        </flux:button>
+
+                        <flux:menu>
+                            <flux:menu.item
+                                variant="danger"
+                                icon="trash"
+                                wire:click="confirmDeleteSelected"
+                            >
+                                {{ __('Delete selected users') }}
+                            </flux:menu.item>
+                        </flux:menu>
+                    </flux:dropdown>
+                @endif
+            </div>
+
+            <flux:dropdown align="end" class="sm:hidden">
+                <flux:button
+                    icon="ellipsis-horizontal"
+                    square
+                    :aria-label="__('Actions')"
+                />
+
+                <flux:menu>
+                    <flux:menu.item icon="plus" wire:click="$set('showCreateModal', true)">
+                        {{ __('Add user') }}
+                    </flux:menu.item>
+
+                    @if ($selected !== [])
+                        <flux:menu.separator />
+
+                        <flux:menu.item
+                            variant="danger"
+                            icon="trash"
+                            wire:click="confirmDeleteSelected"
+                        >
+                            {{ __('Delete selected users') }}
+                        </flux:menu.item>
+                    @endif
+                </flux:menu>
+            </flux:dropdown>
         @endif
     </div>
 
     <flux:separator variant="subtle" />
 
-    <flux:table :paginate="$users">
-        <flux:table.columns>
-            <flux:table.column>{{ __('Name') }}</flux:table.column>
-            <flux:table.column class="w-1/5">{{ __('Email') }}</flux:table.column>
-            <flux:table.column align="center" class="w-[15%]">{{ __('Role') }}</flux:table.column>
-            <flux:table.column align="end" class="w-[15%]">{{ __('Registered at') }}</flux:table.column>
-            <flux:table.column align="end">{{ __('Actions') }}</flux:table.column>
-        </flux:table.columns>
+    @php($canManageUsers = auth()->user()->role->canManageUsers())
+    @php($selectedIds = array_map('intval', $selected))
 
-        <flux:table.rows>
-            @foreach ($users as $user)
-                @php($isCurrentUser = $user->is(auth()->user()))
-
-                <flux:table.row :key="$user->id" :class="$isCurrentUser ? 'bg-zinc-100/60 dark:bg-zinc-700/30' : ''">
-                    <flux:table.cell class="w-7/12">
-                        <span class="inline-flex items-center gap-2">
-                            <flux:avatar size="sm" :initials="$user->initials()" />
-
-                            <flux:link :href="route('users.show', $user)" wire:navigate>{{ $user->name }}</flux:link>
-
-                            @if ($isCurrentUser)
-                                <flux:badge size="sm" color="zinc">{{ __('You') }}</flux:badge>
-                            @endif
-                        </span>
-                    </flux:table.cell>
-
-                    <flux:table.cell class="w-2/12">
-                        <span class="inline-flex items-center gap-2">
-                            {{ $user->email }}
-
-                            <x-verification-badge :user="$user" />
-                        </span>
-                    </flux:table.cell>
-
-                    <flux:table.cell align="center" class="w-1/12">
-                        {{ $user->role->label() }}
-                    </flux:table.cell>
-
-                    <flux:table.cell align="end" class="w-1/12 whitespace-nowrap">
-                        {{ $user->created_at?->toFormattedDateString() ?? '—' }}
-                    </flux:table.cell>
-
-                    <flux:table.cell align="end" class="w-1/12">
-                        @if (! $isCurrentUser && auth()->user()->role->canManageUsers())
-                            <flux:dropdown align="end">
-                                <flux:button
-                                    variant="ghost"
-                                    size="sm"
-                                    square
-                                    icon="ellipsis-horizontal"
-                                    :aria-label="__('Actions for :name', ['name' => $user->name])"
+    <flux:checkbox.group
+        wire:key="users-{{ $users->currentPage() }}-{{ $sortDirection }}-{{ $selectionKey }}"
+        wire:model.live="selected"
+    >
+        <flux:table :paginate="$users">
+            <flux:table.columns>
+                <flux:table.column>
+                    <span class="inline-flex items-center gap-2">
+                        @if ($canManageUsers)
+                            <span class="relative inline-flex shrink-0 items-center justify-center">
+                                <input
+                                    type="checkbox"
+                                    wire:change="toggleSelectAll"
+                                    @checked($allSelected)
+                                    x-init="const el = $el; const syncIndeterminate = () => el.indeterminate = $wire.someSelected; syncIndeterminate(); $wire.$watch('someSelected', syncIndeterminate)"
+                                    aria-label="{{ __('Select all users') }}"
+                                    class="peer size-[1.125rem] cursor-pointer appearance-none rounded-[.3rem] border border-zinc-300 bg-white shadow-xs outline-offset-2 checked:border-zinc-800 checked:bg-zinc-800 indeterminate:border-zinc-800 indeterminate:bg-zinc-800 dark:border-white/10 dark:bg-white/10 dark:checked:border-white dark:checked:bg-white dark:indeterminate:border-white dark:indeterminate:bg-white"
                                 />
 
-                                <flux:menu>
-                                    @if (auth()->user()->role->isOwner() || ! $user->role->isOwner())
+                                <svg class="pointer-events-none absolute hidden size-[.6rem] text-white peer-checked:block dark:text-zinc-800" viewBox="0 0 12 10" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <path d="M1 5 4.5 8.5 11 1" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+
+                                <svg class="pointer-events-none absolute hidden h-0.5 w-[.55rem] rounded-full bg-white peer-indeterminate:block dark:bg-zinc-800" viewBox="0 0 10 2" fill="currentColor" aria-hidden="true">
+                                    <rect width="10" height="2" rx="1" />
+                                </svg>
+                            </span>
+                        @endif
+
+                        {{ __('Name') }}
+                    </span>
+                </flux:table.column>
+                <flux:table.column class="w-1/5">{{ __('Email') }}</flux:table.column>
+                <flux:table.column align="center" class="w-[15%]">{{ __('Role') }}</flux:table.column>
+                <flux:table.column
+                    align="end"
+                    class="w-[15%]"
+                    sortable
+                    sorted
+                    :direction="$sortDirection"
+                    wire:click="sortByCreatedAt"
+                >
+                    {{ __('Registered at') }}
+                </flux:table.column>
+                <flux:table.column align="center">{{ __('Actions') }}</flux:table.column>
+            </flux:table.columns>
+
+            <flux:table.rows>
+                @foreach ($users as $user)
+                    @php($isCurrentUser = $user->is(auth()->user()))
+                    @php($isSelected = in_array($user->id, $selectedIds, true))
+                    @php($canManageUser = $canManageUsers && ! $isCurrentUser && (auth()->user()->role->isOwner() || ! $user->role->isOwner()))
+
+                    <flux:table.row
+                        :key="$user->id"
+                        class="group/row cursor-pointer hover:bg-zinc-100/60 dark:hover:bg-zinc-700/30"
+                        x-on:click="if (! $event.target.closest('a, button, input, ui-checkbox, ui-dropdown')) window.Livewire.navigate('{{ route('users.show', $user) }}')"
+                    >
+                        <flux:table.cell class="w-7/12">
+                            <span class="relative inline-flex items-center gap-2">
+                                <a
+                                    href="{{ route('users.show', $user) }}"
+                                    wire:navigate
+                                    class="inline-flex items-center gap-2 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-900"
+                                >
+                                    <span
+                                        @class([
+                                            'relative inline-flex ml-1 size-8 shrink-0 items-center justify-center transition-opacity',
+                                            'opacity-0' => $isSelected,
+                                            'group-hover/row:opacity-0 group-focus-within/row:opacity-0' => ! $isSelected && $canManageUser,
+                                        ])
+                                        aria-hidden="true"
+                                    >
+                                        <flux:avatar size="sm" :initials="$user->initials()" />
+                                    </span>
+
+                                    {{ $user->name }}
+                                </a>
+
+                                @if ($isCurrentUser)
+                                    <flux:badge size="sm" color="zinc">{{ __('You') }}</flux:badge>
+                                @endif
+
+                                @if ($canManageUser)
+                                    <span class="absolute left-1 top-1/2 z-10 flex size-8 -translate-y-1/2 items-center justify-center">
+                                        <flux:checkbox
+                                            value="{{ $user->id }}"
+                                            :aria-label="__('Select :name', ['name' => $user->name])"
+                                            @class([
+                                                'transition-opacity',
+                                                'opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100' => ! $isSelected,
+                                            ])
+                                        />
+                                    </span>
+                                @endif
+                            </span>
+                        </flux:table.cell>
+
+                        <flux:table.cell class="w-2/12">
+                            <span class="inline-flex items-center gap-2">
+                                {{ $user->email }}
+
+                                <x-verification-badge :user="$user" />
+                            </span>
+                        </flux:table.cell>
+
+                        <flux:table.cell align="center" class="w-1/12">
+                            {{ $user->role->label() }}
+                        </flux:table.cell>
+
+                        <flux:table.cell align="end" class="w-1/12 whitespace-nowrap">
+                            {{ $user->created_at?->toFormattedDateString() ?? '—' }}
+                        </flux:table.cell>
+
+                        <flux:table.cell align="center" class="w-1/12">
+                            @if ($canManageUser)
+                                <flux:dropdown align="end">
+                                    <flux:button
+                                        variant="ghost"
+                                        size="sm"
+                                        square
+                                        icon="ellipsis-horizontal"
+                                        :disabled="$isSelected"
+                                        :aria-label="__('Actions for :name', ['name' => $user->name])"
+                                    />
+
+                                    <flux:menu>
                                         <flux:menu.item icon="pencil-square" wire:click="openEdit({{ $user->id }})">
                                             {{ __('Edit user') }}
                                         </flux:menu.item>
-                                    @endif
 
-                                    @if ($user->role->isMember())
-                                        <flux:menu.item icon="arrow-up-circle" wire:click="confirmPromote({{ $user->id }})">
-                                            {{ __('Promote admin') }}
+                                        @if ($user->role->isMember())
+                                            <flux:menu.item icon="arrow-up-circle" wire:click="confirmPromote({{ $user->id }})">
+                                                {{ __('Promote admin') }}
+                                            </flux:menu.item>
+                                        @elseif ($user->role->isAdmin())
+                                            <flux:menu.item icon="arrow-down-circle" wire:click="confirmDemote({{ $user->id }})">
+                                                {{ __('Demote admin') }}
+                                            </flux:menu.item>
+                                        @endif
+
+                                        @if (! $user->hasVerifiedEmail())
+                                            <flux:menu.item icon="arrow-path" wire:click="resendVerification({{ $user->id }})">
+                                                {{ __('Resend verification') }}
+                                            </flux:menu.item>
+                                        @endif
+
+                                        <flux:menu.separator />
+
+                                        <flux:menu.item
+                                            variant="danger"
+                                            icon="trash"
+                                            wire:click="confirmDelete({{ $user->id }})"
+                                        >
+                                            {{ __('Remove user') }}
                                         </flux:menu.item>
-                                    @elseif ($user->role->isAdmin())
-                                        <flux:menu.item icon="arrow-down-circle" wire:click="confirmDemote({{ $user->id }})">
-                                            {{ __('Demote admin') }}
-                                        </flux:menu.item>
-                                    @endif
+                                    </flux:menu>
+                                </flux:dropdown>
+                            @endif
+                        </flux:table.cell>
+                    </flux:table.row>
+                @endforeach
+            </flux:table.rows>
+        </flux:table>
+    </flux:checkbox.group>
 
-                                    <flux:menu.separator />
-
-                                    <flux:menu.item
-                                        variant="danger"
-                                        icon="trash"
-                                        wire:click="confirmDelete({{ $user->id }})"
-                                    >
-                                        {{ __('Remove user') }}
-                                    </flux:menu.item>
-                                </flux:menu>
-                            </flux:dropdown>
-                        @endif
-                    </flux:table.cell>
-                </flux:table.row>
-            @endforeach
-        </flux:table.rows>
-    </flux:table>
 
     <flux:modal
         wire:model.self="showCreateModal"
@@ -163,6 +291,31 @@
 
                 <flux:button variant="danger" wire:click="deleteConfirmed">
                     {{ __('Remove user') }}
+                </flux:button>
+            </div>
+        </div>
+    </flux:modal>
+
+    <flux:modal
+        wire:model.self="showBatchDeleteModal"
+        class="md:w-96"
+        x-init="$el.querySelector('dialog')?.setAttribute('aria-labelledby', 'delete-selected-users-heading')"
+    >
+        <div class="space-y-6">
+            <div>
+                <flux:heading id="delete-selected-users-heading" size="lg">{{ __('Remove users') }}</flux:heading>
+                <flux:subheading>
+                    {{ __('Remove :count selected users? This cannot be undone.', ['count' => count($selected)]) }}
+                </flux:subheading>
+            </div>
+
+            <div class="flex items-center justify-between">
+                <flux:modal.close>
+                    <flux:button variant="subtle">{{ __('Cancel') }}</flux:button>
+                </flux:modal.close>
+
+                <flux:button variant="danger" wire:click="deleteSelectedConfirmed">
+                    {{ __('Remove users') }}
                 </flux:button>
             </div>
         </div>

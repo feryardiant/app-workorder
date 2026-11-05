@@ -24,9 +24,23 @@ class VerifyNewUserEmailController extends Controller
             403,
         );
 
-        if (! $user->hasVerifiedEmail() && $user->markEmailAsVerified()) {
-            event(new Verified($user));
+        if ($user->hasVerifiedEmail()) {
+            if ($request->user() === null) {
+                return redirect()->route('login')->with(
+                    'status',
+                    __('This invitation has already been used. Use the "Forgot your password?" link to set your password.'),
+                );
+            }
+
+            return redirect()->route('dashboard')->with(
+                'status',
+                __('This invitation has already been used. Log out, then use the "Forgot your password?" link to set your password.'),
+            );
         }
+
+        $user->markEmailAsVerified();
+
+        event(new Verified($user));
 
         return redirect()->route('password.reset', [
             'token' => Password::broker()->createToken($user),

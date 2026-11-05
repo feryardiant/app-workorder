@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Tests;
 
+use AllowDynamicProperties;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Laravel\Fortify\Features;
 
+#[AllowDynamicProperties]
 abstract class TestCase extends BaseTestCase
 {
     protected function skipUnlessFortifyHas(string $feature, ?string $message = null): void
