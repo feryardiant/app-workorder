@@ -23,6 +23,18 @@ it('lets a verified user sign in and out', function () {
     $page->assertPathIs('/login');
 });
 
+it('hides management actions on your own user detail page', function () {
+    $admin = User::factory()->withRole(Role::Admin)->create();
+    $member = User::factory()->withRole(Role::Member)->create();
+
+    $page = browserLogin($admin)->navigate("/users/{$admin->id}");
+
+    $page->assertDontSee('Edit pengguna')
+        ->assertDontSee('Jadikan Anggota')
+        ->navigate("/users/{$member->id}")
+        ->assertSee('Edit pengguna');
+});
+
 it('lets an owner add a user', function () {
     $owner = User::factory()->withRole(Role::Owner)->create();
 

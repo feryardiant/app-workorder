@@ -1,6 +1,6 @@
 <div class="flex w-full flex-1 flex-col gap-6">
     @php($roleColor = $user->role->isOwner() ? 'amber' : ($user->role->isAdmin() ? 'blue' : 'zinc'))
-    @php($canManageUser = auth()->user()->role->canManageUsers() && (auth()->user()->role->isOwner() || ! $user->role->isOwner()))
+    @php($canManageUser = auth()->user()->role->canManageUsers() && ! $user->is(auth()->user()) && (auth()->user()->role->isOwner() || ! $user->role->isOwner()))
 
     <div class="flex items-start justify-between gap-4">
         <div class="relative w-full">
