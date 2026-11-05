@@ -4,6 +4,14 @@
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-white dark:bg-zinc-800">
+        <div
+            data-notification-poller
+            data-url="{{ route('notifications.latest') }}"
+            data-ack-url="{{ route('notifications.latest.ack') }}"
+            data-csrf="{{ csrf_token() }}"
+            hidden
+        ></div>
+
         <flux:sidebar sticky collapsible="mobile" class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
             <flux:sidebar.header>
                 <x-app-logo :sidebar="true" href="{{ route('dashboard') }}" wire:navigate />
@@ -39,8 +47,40 @@
 
             <flux:spacer />
 
-            <flux:dropdown position="top" align="end">
-                <flux:profile :initials="auth()->user()->initials()" icon-trailing="chevron-down" />
+            @php($unreadNotifications = auth()->user()->unreadNotifications()->count())
+
+            <div
+                class="contents"
+                x-data="{ unread: {{ $unreadNotifications }} }"
+                @notifications-updated.window="unread = $event.detail.count"
+            >
+                <span
+                    class="sr-only"
+                    role="status"
+                    aria-live="polite"
+                    aria-atomic="true"
+                    x-text="unread > 0
+                        ? {{ \Illuminate\Support\Js::from(__(':count unread notifications')) }}.replace(':count', unread)
+                        : {{ \Illuminate\Support\Js::from(__('No unread notifications')) }}"
+                ></span>
+
+                <flux:dropdown position="top" align="end">
+                <flux:profile
+                    :initials="auth()->user()->initials()"
+                    icon-trailing="chevron-down"
+                >
+                    <x-slot:avatar>
+                        <span class="relative inline-flex">
+                            <flux:avatar :initials="auth()->user()->initials()" size="sm" />
+
+                            <span
+                                x-show="unread > 0"
+                                class="absolute top-0 left-0 z-10 size-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-zinc-900"
+                                aria-hidden="true"
+                            ></span>
+                        </span>
+                    </x-slot:avatar>
+                </flux:profile>
 
                 <flux:menu>
                     <flux:menu.radio.group>
@@ -65,6 +105,20 @@
                         <flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>
                             {{ __('Settings') }}
                         </flux:menu.item>
+                        <flux:menu.item :href="route('notifications.index')" icon="bell" wire:navigate>
+                            {{ __('Notification') }}
+
+                            <x-slot:suffix>
+                                <span
+                                    x-show="unread > 0"
+                                    x-text="unread"
+                                    role="status"
+                                    aria-live="polite"
+                                    aria-atomic="true"
+                                    class="ms-auto text-xs text-zinc-400"
+                                ></span>
+                            </x-slot:suffix>
+                        </flux:menu.item>
                     </flux:menu.radio.group>
 
                     <flux:menu.separator />
@@ -82,7 +136,8 @@
                         </flux:menu.item>
                     </form>
                 </flux:menu>
-            </flux:dropdown>
+                </flux:dropdown>
+            </div>
         </flux:header>
 
         {{ $slot }}

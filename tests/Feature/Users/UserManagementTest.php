@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Notifications\UserRoleChangedNotification;
 use App\Notifications\VerifyEmailForNewUser;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
@@ -516,4 +517,41 @@ test('a new user email cannot be verified with an invalid hash', function () {
     get($url)->assertForbidden();
 
     expect($user->fresh()->hasVerifiedEmail())->toBeFalse();
+});
+
+test('an authenticated user sees instructions for a used invitation link', function () {
+    $invited = User::factory()->create();
+    actingAs(User::factory()->create());
+
+    $url = URL::temporarySignedRoute(
+        'verification.verify.new',
+        now()->addMinutes(60),
+        ['id' => $invited->id, 'hash' => sha1($invited->email)],
+    );
+
+    $status = __('This invitation has already been used. Log out, then use the "Forgot your password?" link to set your password.');
+
+    get($url)
+        ->assertRedirect(route('dashboard'))
+        ->assertSessionHas('status', $status);
+
+    get(route('dashboard'))
+        ->assertOk()
+        ->assertSee($status);
+});
+
+test('a verified user cannot get a password reset token from a verification link', function () {
+    $user = User::factory()->create();
+
+    $url = URL::temporarySignedRoute(
+        'verification.verify.new',
+        now()->addMinutes(60),
+        ['id' => $user->id, 'hash' => sha1($user->email)],
+    );
+
+    get($url)
+        ->assertRedirect(route('login'))
+        ->assertSessionHas('status', __('This invitation has already been used. Use the "Forgot your password?" link to set your password.'));
+
+    expect(DB::table('password_reset_tokens')->where('email', $user->email)->exists())->toBeFalse();
 });
