@@ -120,7 +120,7 @@
                     <flux:table.row
                         :key="$user->id"
                         class="group/row cursor-pointer hover:bg-zinc-100/60 dark:hover:bg-zinc-700/30"
-                        x-on:click="if (! $event.target.closest('a, button, input, ui-checkbox, ui-dropdown')) window.Livewire.navigate('{{ route('users.show', $user) }}')"
+                        x-on:click="if (! window.getSelection()?.toString() && ! $event.target.closest('a, button, input, ui-checkbox, ui-dropdown')) window.Livewire.navigate('{{ route('users.show', $user) }}')"
                     >
                         <flux:table.cell class="w-7/12">
                             <span class="relative inline-flex items-center gap-2">

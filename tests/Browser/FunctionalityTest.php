@@ -169,6 +169,28 @@ it('navigates from a user row but not from its selection control', function () {
         ->assertScript('document.querySelector("ui-checkbox[value=\"'.$member->id.'\"]").getAttribute("aria-checked") === "true"');
 });
 
+it('does not navigate when selecting text in a user row', function () {
+    $owner = User::factory()->withRole(Role::Owner)->create();
+    User::factory()->withRole(Role::Member)->create();
+
+    $page = browserLogin($owner)->navigate('/users');
+
+    $page->script(<<<'JS'
+        const cell = document.querySelector('[data-flux-row]:has(ui-checkbox) [data-flux-cell]:nth-child(2)');
+        const range = document.createRange();
+        range.selectNodeContents(cell);
+
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+
+        cell.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }))
+        JS);
+    $page->wait(0.4);
+
+    $page->assertPathIs('/users');
+});
+
 it('lists only the signed-in user notifications', function () {
     $owner = User::factory()->create();
     $actor = User::factory()->create();
