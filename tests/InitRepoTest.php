@@ -119,9 +119,9 @@ beforeEach(function () use (&$root, $makeFixture): void {
 });
 
 afterEach(function () use (&$root): void {
-    if ($root !== null) {
+    if ($root !== '') {
         removePath($root);
-        $root = null;
+        $root = '';
     }
 });
 
