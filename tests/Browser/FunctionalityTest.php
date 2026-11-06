@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\Locale;
 use App\Enums\Role;
 use App\Models\User;
 use App\Notifications\UserRoleChangedNotification;
@@ -300,11 +301,36 @@ it('updates locale and offers to reload the page', function () {
 
     $page->click('Bahasa Inggris')
         ->assertSee('Preferensi Anda telah diperbarui.')
+        ->assertScript('document.querySelector("[data-flux-toast-dialog] ui-close button")?.getAttribute("aria-label") === "Tutup"')
         ->click('Muat ulang halaman')
         ->wait(0.8)
         ->assertSee('Preferences');
 
     expect($member->refresh()->locale->value)->toBe('en');
+});
+
+it('applies the preferred locale to livewire updates', function () {
+    $member = User::factory()->withRole(Role::Member)->create(['locale' => Locale::English]);
+
+    $page = browserLogin($member)->navigate('/settings/profile');
+
+    $page->fill('name', 'English Name')
+        ->click('Save')
+        ->assertSee('Profile updated.');
+});
+
+it('shows a danger toast when preferences cannot be saved', function () {
+    $member = User::factory()->withRole(Role::Member)->create(['locale' => Locale::English]);
+
+    $page = browserLogin($member)->navigate('/settings/preferences');
+
+    $page->script(<<<'JS'
+        const select = document.querySelector('[x-model=timezone]');
+        select.value = '';
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+    JS);
+
+    $page->assertSee('The timezone field is required.');
 });
 
 it('updates timezone and offers to reload the page', function () {

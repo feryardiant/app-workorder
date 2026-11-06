@@ -7,10 +7,12 @@ use App\Enums\Role;
 use App\Models\User;
 use App\Notifications\UserRoleChangedNotification;
 use Carbon\CarbonImmutable;
+use Illuminate\Mail\Transport\ArrayTransport;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Symfony\Component\Mime\Email;
 
 use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
@@ -38,7 +40,8 @@ test('the locale middleware falls back to the app default locale', function () {
 });
 
 test('notifications use the recipients preferred locale', function () {
-    Mail::fake();
+    config(['mail.default' => 'array']);
+    Mail::purge();
 
     $recipient = User::factory()->create(['locale' => Locale::English]);
     $actor = User::factory()->create();
@@ -47,8 +50,18 @@ test('notifications use the recipients preferred locale', function () {
 
     $data = $recipient->notifications()->firstOrFail()->data;
 
+    $transport = Mail::mailer()->getSymfonyTransport();
+    expect($transport)->toBeInstanceOf(ArrayTransport::class);
+
+    $message = $transport->messages()->last()->getOriginalMessage();
+    $subject = $message instanceof Email ? (string) $message->getSubject() : '';
+    $html = $message instanceof Email ? (string) $message->getHtmlBody() : '';
+
     expect($data['title'])->toBe('Your role at '.config('app.name').' has changed')
-        ->and($data['description'])->toContain('changed your role');
+        ->and($data['description'])->toContain('changed your role')
+        ->and($subject)->toContain('has changed')
+        ->and($html)->toContain('just changed your role')
+        ->and($html)->not->toContain('telah berubah');
 });
 
 test('preferred locale is null when the user has no locale preference', function () {

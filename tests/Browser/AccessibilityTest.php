@@ -64,6 +64,15 @@ it('has no serious accessibility issues on the notifications page', function (st
         ->assertNoJavaScriptErrors();
 })->with(['desktop', 'mobile']);
 
+it('has no serious accessibility issues on the preferences page', function (string $device) {
+    $owner = User::factory()->withRole(Role::Owner)->create();
+
+    browserLogin($owner, $device)
+        ->navigate('/settings/preferences')
+        ->assertNoAccessibilityIssues()
+        ->assertNoJavaScriptErrors();
+})->with(['desktop', 'mobile']);
+
 it('has no serious accessibility issues on the user detail page', function () {
     $owner = User::factory()->withRole(Role::Owner)->create();
     $member = User::factory()->create();
