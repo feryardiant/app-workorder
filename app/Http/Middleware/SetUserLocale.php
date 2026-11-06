@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
-use App\Models\User;
 use Closure;
+use Illuminate\Contracts\Translation\HasLocalePreference;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,14 +19,12 @@ class SetUserLocale
     {
         $user = $request->user();
 
-        $locale = $user instanceof User
-            ? $user->locale?->value
-            : null;
+        if ($user instanceof HasLocalePreference) {
+            $locale = $user->preferredLocale();
 
-        $locale ??= (string) config('app.default_locale');
-
-        app()->setLocale($locale);
-        Date::setLocale($locale);
+            app()->setLocale($locale);
+            Date::setLocale($locale);
+        }
 
         return $next($request);
     }
