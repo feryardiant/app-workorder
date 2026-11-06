@@ -7,7 +7,34 @@
             locale: @js($locale),
             timezone: @js($timezone),
         },
-        async save(key, value) {
+        queues: {
+            locale: [],
+            timezone: [],
+        },
+        busy: {
+            locale: false,
+            timezone: false,
+        },
+        save(key, value) {
+            this.queues[key].push(value);
+            this.flush(key);
+        },
+        async flush(key) {
+            if (this.busy[key]) {
+                return;
+            }
+
+            this.busy[key] = true;
+
+            try {
+                while (this.queues[key].length) {
+                    await this.persist(key, this.queues[key].shift());
+                }
+            } finally {
+                this.busy[key] = false;
+            }
+        },
+        async persist(key, value) {
             try {
                 const response = await fetch(@js(route('preferences.update')), {
                     method: 'PATCH',

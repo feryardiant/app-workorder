@@ -309,6 +309,18 @@ it('updates locale and offers to reload the page', function () {
     expect($member->refresh()->locale->value)->toBe('en');
 });
 
+it('keeps the latest rapid preference selection', function () {
+    $member = User::factory()->withRole(Role::Member)->create();
+
+    $page = browserLogin($member)->navigate('/settings/preferences');
+
+    $page->click('Bahasa Inggris')
+        ->click('Bahasa Indonesia')
+        ->wait(1.5);
+
+    expect($member->refresh()->locale)->toBe(Locale::Indonesian);
+});
+
 it('applies the preferred locale to livewire updates', function () {
     $member = User::factory()->withRole(Role::Member)->create(['locale' => Locale::English]);
 
