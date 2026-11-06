@@ -58,10 +58,13 @@ jobs:
           test ! -e scripts/init-repo.php
 
       - name: Amend initial commit
+        env:
+          CI_BOT_USERNAME: ${{ vars.CI_BOT_USERNAME || 'github-actions[bot]' }}
+          CI_BOT_EMAIL: ${{ vars.CI_BOT_EMAIL || '41898282+github-actions[bot]@users.noreply.github.com' }}
         run: |
           set -euo pipefail
-          git config user.name "${{ vars.CI_BOT_USERNAME || 'github-actions[bot]' }}"
-          git config user.email "${{ vars.CI_BOT_EMAIL || '41898282+github-actions[bot]@users.noreply.github.com' }}"
+          git config user.name "$CI_BOT_USERNAME"
+          git config user.email "$CI_BOT_EMAIL"
           git add -A
           git commit --amend --no-verify -m 'chore: initial commit :fire:'
           git push --force-with-lease origin HEAD:main
