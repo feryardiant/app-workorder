@@ -330,7 +330,9 @@ it('shows a danger toast when preferences cannot be saved', function () {
         select.dispatchEvent(new Event('change', { bubbles: true }));
     JS);
 
-    $page->assertSee('The timezone field is required.');
+    $page->assertSee('The timezone field is required.')
+        ->assertScript('document.querySelector("[data-flux-toast-dialog][data-variant=danger]") !== null')
+        ->assertScript('document.querySelector("[x-model=timezone]").value === "UTC"');
 });
 
 it('updates timezone and offers to reload the page', function () {

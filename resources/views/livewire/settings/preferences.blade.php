@@ -3,6 +3,10 @@
     x-data="{
         locale: @js($locale),
         timezone: @js($timezone),
+        saved: {
+            locale: @js($locale),
+            timezone: @js($timezone),
+        },
         async save(key, value) {
             try {
                 const response = await fetch(@js(route('preferences.update')), {
@@ -21,6 +25,8 @@
                     throw new Error(data.message ?? @js(__('Failed to update preferences.')));
                 }
 
+                this.saved[key] = value;
+
                 window.Flux.toast({
                     variant: 'success',
                     text: @js(__('Your preferences have been updated. Reload to apply them.')),
@@ -31,6 +37,10 @@
                     },
                 });
             } catch (error) {
+                if (this[key] === value) {
+                    this[key] = this.saved[key];
+                }
+
                 window.Flux.toast({
                     variant: 'danger',
                     text: error.message,
