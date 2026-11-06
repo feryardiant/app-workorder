@@ -22,10 +22,11 @@ return new class extends Migration
         });
 
         foreach (DB::table('users')->pluck('id') as $id) {
+            $id = (string) $id;
             $handle = 'user'.$id;
 
             if (\strlen($handle) > 15) {
-                $handle = 'u'.base_convert((string) $id, 10, 36);
+                $handle = 'h'.self::toBase36($id);
             }
 
             DB::table('users')->where('id', $id)->update(['handle' => $handle]);
@@ -34,6 +35,31 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {
             $table->string('handle', 15)->nullable(false)->change();
         });
+    }
+
+    /**
+     * Convert a decimal string to base 36 without losing precision.
+     */
+    private static function toBase36(string $value): string
+    {
+        $alphabet = '0123456789abcdefghijklmnopqrstuvwxyz';
+        $result = '';
+
+        while ($value !== '' && $value !== '0') {
+            $remainder = 0;
+            $quotient = '';
+
+            foreach (str_split($value) as $digit) {
+                $number = $remainder * 10 + (int) $digit;
+                $quotient .= intdiv($number, 36);
+                $remainder = $number % 36;
+            }
+
+            $result = $alphabet[$remainder].$result;
+            $value = ltrim($quotient, '0');
+        }
+
+        return $result === '' ? '0' : $result;
     }
 
     /**
