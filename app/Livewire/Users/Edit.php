@@ -22,6 +22,8 @@ class Edit extends Component
 
     public bool $showModal = false;
 
+    public bool $fromDetail = false;
+
     public string $name = '';
 
     public string $handle = '';
@@ -31,6 +33,7 @@ class Edit extends Component
     public function mount(?User $user = null): void
     {
         if ($user instanceof User) {
+            $this->fromDetail = true;
             $this->fillFrom($user);
         }
     }
@@ -62,6 +65,7 @@ class Edit extends Component
             'email' => Str::lower($validated['email']),
         ]);
 
+        $handleChanged = $this->user->isDirty('handle');
         $emailChanged = $this->user->isDirty('email');
 
         if ($emailChanged) {
@@ -77,6 +81,12 @@ class Edit extends Component
         $this->showModal = false;
 
         $this->dispatch('user-updated');
+
+        if ($this->fromDetail && $handleChanged) {
+            $this->redirect(route('users.show', $this->user), navigate: true);
+
+            return;
+        }
 
         Flux::toast(variant: 'success', text: $emailChanged
             ? __('User updated. A verification email has been sent to the new address.')

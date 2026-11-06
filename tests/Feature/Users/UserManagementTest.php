@@ -119,6 +119,27 @@ test('an admin can edit a user handle', function () {
     expect($user->refresh()->handle)->toBe('updatedhandle');
 });
 
+test('editing a handle from the detail page redirects to the new handle', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $user = User::factory()->create();
+
+    Livewire::test(Edit::class, ['user' => $user])
+        ->set('handle', 'updatedhandle')
+        ->call('update')
+        ->assertRedirect(route('users.show', $user->refresh()));
+});
+
+test('editing a handle from the index stays on the index', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $user = User::factory()->create();
+
+    Livewire::test(Edit::class)
+        ->call('editUser', $user->id)
+        ->set('handle', 'updatedhandle')
+        ->call('update')
+        ->assertNoRedirect();
+});
+
 test('an admin cannot assign another users handle', function () {
     actingAs(User::factory()->withRole(Role::Admin)->create());
     User::factory()->create(['handle' => 'takenhandle']);
