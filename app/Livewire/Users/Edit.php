@@ -30,6 +30,9 @@ class Edit extends Component
 
     public string $email = '';
 
+    /**
+     * Mount the component.
+     */
     public function mount(?User $user = null): void
     {
         if ($user instanceof User) {
@@ -38,6 +41,9 @@ class Edit extends Component
         }
     }
 
+    /**
+     * Fill the form from the selected user.
+     */
     #[On('edit-user')]
     public function editUser(int $userId): void
     {
@@ -49,6 +55,9 @@ class Edit extends Component
         $this->showModal = true;
     }
 
+    /**
+     * Update the selected user.
+     */
     public function update(): void
     {
         abort_if($this->user === null, 404);
@@ -106,6 +115,9 @@ class Edit extends Component
         $this->email = $user->email;
     }
 
+    /**
+     * Authorize the current user to manage the given user.
+     */
     private function authorizeUserManagement(User $user): void
     {
         $actor = Auth::user();

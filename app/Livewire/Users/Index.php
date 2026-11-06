@@ -66,6 +66,9 @@ class Index extends Component
      */
     public string $sortDirection = 'desc';
 
+    /**
+     * Create a new user and send a verification email.
+     */
     public function createUser(): void
     {
         $actor = Auth::user();
@@ -145,6 +148,9 @@ class Index extends Component
         $this->dispatch('edit-user', userId: $userId);
     }
 
+    /**
+     * Resend the verification email to the given user.
+     */
     public function resendVerification(int $userId): void
     {
         $user = User::findOrFail($userId);
@@ -177,6 +183,9 @@ class Index extends Component
         $this->showRoleModal = true;
     }
 
+    /**
+     * Apply the confirmed role change.
+     */
     public function changeRoleConfirmed(ChangeUserRole $changeUserRole): void
     {
         $user = $this->roleChangeUser();
@@ -225,6 +234,9 @@ class Index extends Component
         Flux::toast(variant: 'success', text: __('User demoted to Member.'));
     }
 
+    /**
+     * Delete the user awaiting confirmation.
+     */
     public function deleteConfirmed(): void
     {
         $user = $this->deletingUser();
@@ -236,6 +248,9 @@ class Index extends Component
         $this->reset('showDeleteModal', 'deletingUserId');
     }
 
+    /**
+     * Delete the given user.
+     */
     public function deleteUser(int $userId): void
     {
         $user = User::findOrFail($userId);
@@ -325,6 +340,9 @@ class Index extends Component
         $this->resetPage();
     }
 
+    /**
+     * Delete the selected users.
+     */
     public function deleteSelected(): void
     {
         $actor = Auth::user();
