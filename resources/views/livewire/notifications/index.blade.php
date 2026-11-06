@@ -148,7 +148,7 @@
                     </flux:table.cell>
 
                     <flux:table.cell align="end" class="w-1/12 whitespace-nowrap">
-                        {{ $notification->created_at?->translatedFormat('d M Y') ?? '—' }}
+                        <x-local-time :date="$notification->created_at" />
                     </flux:table.cell>
                 </flux:table.row>
             @empty

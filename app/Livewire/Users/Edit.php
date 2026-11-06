@@ -22,17 +22,28 @@ class Edit extends Component
 
     public bool $showModal = false;
 
+    public bool $fromDetail = false;
+
     public string $name = '';
+
+    public string $handle = '';
 
     public string $email = '';
 
+    /**
+     * Mount the component.
+     */
     public function mount(?User $user = null): void
     {
         if ($user instanceof User) {
+            $this->fromDetail = true;
             $this->fillFrom($user);
         }
     }
 
+    /**
+     * Fill the form from the selected user.
+     */
     #[On('edit-user')]
     public function editUser(int $userId): void
     {
@@ -44,6 +55,9 @@ class Edit extends Component
         $this->showModal = true;
     }
 
+    /**
+     * Update the selected user.
+     */
     public function update(): void
     {
         abort_if($this->user === null, 404);
@@ -56,9 +70,11 @@ class Edit extends Component
 
         $this->user->fill([
             'name' => $validated['name'],
+            'handle' => $validated['handle'],
             'email' => Str::lower($validated['email']),
         ]);
 
+        $handleChanged = $this->user->isDirty('handle');
         $emailChanged = $this->user->isDirty('email');
 
         if ($emailChanged) {
@@ -75,6 +91,12 @@ class Edit extends Component
 
         $this->dispatch('user-updated');
 
+        if ($this->fromDetail && $handleChanged) {
+            $this->redirect(route('users.show', $this->user), navigate: true);
+
+            return;
+        }
+
         Flux::toast(variant: 'success', text: $emailChanged
             ? __('User updated. A verification email has been sent to the new address.')
             : __('User updated.'));
@@ -89,9 +111,13 @@ class Edit extends Component
     {
         $this->user = $user;
         $this->name = $user->name;
+        $this->handle = $user->handle;
         $this->email = $user->email;
     }
 
+    /**
+     * Authorize the current user to manage the given user.
+     */
     private function authorizeUserManagement(User $user): void
     {
         $actor = Auth::user();

@@ -3,9 +3,10 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\NotificationPollerController;
+use App\Http\Controllers\UpdatePreferencesController;
 use App\Http\Controllers\VerifyNewUserEmailController;
 use App\Livewire\Notifications\Index as NotificationIndex;
-use App\Livewire\Settings\Appearance;
+use App\Livewire\Settings\Preferences;
 use App\Livewire\Settings\Profile;
 use App\Livewire\Settings\Security;
 use App\Livewire\Users\Index;
@@ -36,7 +37,8 @@ Route::middleware(['auth'])->group(function () {
 });
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::livewire('settings/appearance', Appearance::class)->name('appearance.edit');
+    Route::livewire('settings/preferences', Preferences::class)->name('preferences.edit');
+    Route::patch('settings/preferences', UpdatePreferencesController::class)->name('preferences.update');
 
     Route::livewire('settings/security', Security::class)
         ->middleware(['password.confirm'])

@@ -1,6 +1,6 @@
 @props(['user'])
 
-@php($verifiedAt = $user->email_verified_at?->translatedFormat('d M Y'))
+@php($verifiedAt = $user->email_verified_at?->timezone(auth()->user()?->timezone ?? 'UTC')?->translatedFormat('d M Y'))
 
 <flux:tooltip :content="$verifiedAt ?? '—'">
     <flux:badge

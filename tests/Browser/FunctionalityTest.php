@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\Locale;
 use App\Enums\Role;
 use App\Models\User;
 use App\Notifications\UserRoleChangedNotification;
@@ -27,11 +28,11 @@ it('hides management actions on your own user detail page', function () {
     $admin = User::factory()->withRole(Role::Admin)->create();
     $member = User::factory()->withRole(Role::Member)->create();
 
-    $page = browserLogin($admin)->navigate("/users/{$admin->id}");
+    $page = browserLogin($admin)->navigate("/users/{$admin->handle}");
 
     $page->assertDontSee('Edit pengguna')
         ->assertDontSee('Jadikan Anggota')
-        ->navigate("/users/{$member->id}")
+        ->navigate("/users/{$member->handle}")
         ->assertSee('Edit pengguna');
 });
 
@@ -158,7 +159,7 @@ it('navigates from a user row but not from its selection control', function () {
     $page = browserLogin($owner)->navigate('/users');
 
     $page->click('[data-flux-row]:has(ui-checkbox[value="'.$member->id.'"]) [data-flux-cell]:nth-child(2)')
-        ->assertPathIs("/users/{$member->id}");
+        ->assertPathIs("/users/{$member->handle}");
 
     $page->navigate('/users')
         ->hover('[data-flux-row]:has(ui-checkbox[value="'.$member->id.'"])')
@@ -291,4 +292,71 @@ it('lets a user update their own profile', function () {
 
     $page->navigate('/settings/profile')
         ->assertValue('name', 'Nama Baru');
+});
+
+it('updates locale and offers to reload the page', function () {
+    $member = User::factory()->withRole(Role::Member)->create();
+
+    $page = browserLogin($member)->navigate('/settings/preferences');
+
+    $page->click('Bahasa Inggris')
+        ->assertSee('Preferensi Anda telah diperbarui.')
+        ->assertScript('document.querySelector("[data-flux-toast-dialog] ui-close button")?.getAttribute("aria-label") === "Tutup"')
+        ->click('Muat ulang halaman')
+        ->wait(0.8)
+        ->assertSee('Preferences');
+
+    expect($member->refresh()->locale->value)->toBe('en');
+});
+
+it('keeps the latest rapid preference selection', function () {
+    $member = User::factory()->withRole(Role::Member)->create();
+
+    $page = browserLogin($member)->navigate('/settings/preferences');
+
+    $page->click('Bahasa Inggris')
+        ->click('Bahasa Indonesia')
+        ->wait(1.5);
+
+    expect($member->refresh()->locale)->toBe(Locale::Indonesian);
+});
+
+it('applies the preferred locale to livewire updates', function () {
+    $member = User::factory()->withRole(Role::Member)->create(['locale' => Locale::English]);
+
+    $page = browserLogin($member)->navigate('/settings/profile');
+
+    $page->fill('name', 'English Name')
+        ->click('Save')
+        ->assertSee('Profile updated.');
+});
+
+it('shows a danger toast when preferences cannot be saved', function () {
+    $member = User::factory()->withRole(Role::Member)->create(['locale' => Locale::English]);
+
+    $page = browserLogin($member)->navigate('/settings/preferences');
+
+    $page->script(<<<'JS'
+        const select = document.querySelector('[x-model=timezone]');
+        select.value = '';
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+    JS);
+
+    $page->assertSee('The timezone field is required.')
+        ->assertScript('document.querySelector("[data-flux-toast-dialog][data-variant=danger]") !== null')
+        ->assertScript('document.querySelector("[x-model=timezone]").value === "UTC"');
+});
+
+it('updates timezone and offers to reload the page', function () {
+    $member = User::factory()->withRole(Role::Member)->create(['timezone' => null]);
+
+    $page = browserLogin($member)->navigate('/settings/preferences');
+
+    $page->select('[x-model=timezone]', 'Asia/Jakarta')
+        ->assertSee('Preferensi Anda telah diperbarui.')
+        ->click('Muat ulang halaman')
+        ->wait(0.8)
+        ->assertScript('document.querySelector("[x-model=timezone]").value === "Asia/Jakarta"');
+
+    expect($member->refresh()->timezone)->toBe('Asia/Jakarta');
 });

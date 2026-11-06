@@ -34,6 +34,46 @@ test('profile information can be updated', function () {
     expect($user->email_verified_at)->toBeNull();
 });
 
+test('profile handle can be updated', function () {
+    actingAs($user = User::factory()->create());
+
+    Livewire::test(Profile::class)
+        ->set('handle', 'newhandle')
+        ->call('updateProfileInformation')
+        ->assertHasNoErrors();
+
+    expect($user->refresh()->handle)->toBe('newhandle');
+});
+
+test('profile handle must be unique', function () {
+    actingAs($user = User::factory()->create());
+    User::factory()->create(['handle' => 'takenhandle']);
+
+    Livewire::test(Profile::class)
+        ->set('handle', 'takenhandle')
+        ->call('updateProfileInformation')
+        ->assertHasErrors(['handle']);
+
+    expect($user->refresh()->handle)->not->toBe('takenhandle');
+});
+
+test('profile handle must be lowercase alphanumeric and 4 to 15 characters', function (string $handle) {
+    actingAs($user = User::factory()->create());
+
+    Livewire::test(Profile::class)
+        ->set('handle', $handle)
+        ->call('updateProfileInformation')
+        ->assertHasErrors(['handle']);
+
+    expect($user->refresh()->handle)->not->toBe($handle);
+})->with([
+    'too short' => 'abc',
+    'too long' => 'abcdefghijklmnop',
+    'uppercase' => 'InvalidHandle',
+    'punctuation' => 'abc-def',
+    'empty' => '',
+]);
+
 test('email verification status is unchanged when email address is unchanged', function () {
     actingAs($user = User::factory()->create());
 

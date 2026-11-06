@@ -107,6 +107,101 @@ test('an admin can edit a user', function () {
     Notification::assertSentTo($user, VerifyEmailForNewUser::class);
 });
 
+test('an admin can edit a user handle', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $user = User::factory()->create();
+
+    Livewire::test(Edit::class, ['user' => $user])
+        ->set('handle', 'updatedhandle')
+        ->call('update')
+        ->assertHasNoErrors();
+
+    expect($user->refresh()->handle)->toBe('updatedhandle');
+});
+
+test('editing a handle from the detail page redirects to the new handle', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $user = User::factory()->create();
+
+    Livewire::test(Edit::class, ['user' => $user])
+        ->set('handle', 'updatedhandle')
+        ->call('update')
+        ->assertRedirect(route('users.show', $user->refresh()));
+});
+
+test('editing a handle from the index stays on the index', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    $user = User::factory()->create();
+
+    Livewire::test(Edit::class)
+        ->call('editUser', $user->id)
+        ->set('handle', 'updatedhandle')
+        ->call('update')
+        ->assertNoRedirect();
+});
+
+test('an admin cannot assign another users handle', function () {
+    actingAs(User::factory()->withRole(Role::Admin)->create());
+    User::factory()->create(['handle' => 'takenhandle']);
+    $user = User::factory()->create();
+
+    Livewire::test(Edit::class, ['user' => $user])
+        ->set('handle', 'takenhandle')
+        ->call('update')
+        ->assertHasErrors(['handle']);
+
+    expect($user->refresh()->handle)->not->toBe('takenhandle');
+});
+
+test('a created user receives a valid generated handle', function () {
+    Notification::fake();
+
+    actingAs(User::factory()->withRole(Role::Owner)->create());
+
+    Livewire::test(Index::class)
+        ->set('name', 'Budi Santoso')
+        ->set('email', 'budi.santoso@example.com')
+        ->set('role', Role::Member->value)
+        ->call('createUser')
+        ->assertHasNoErrors();
+
+    $user = User::query()->where('email', 'budi.santoso@example.com')->firstOrFail();
+
+    expect($user->handle)->toMatch('/^[a-z0-9]{4,15}$/');
+});
+
+test('generated handles stay unique when email local parts collide', function () {
+    Notification::fake();
+
+    actingAs(User::factory()->withRole(Role::Owner)->create());
+    User::factory()->create(['handle' => 'collision']);
+
+    Livewire::test(Index::class)
+        ->set('name', 'Collision User')
+        ->set('email', 'collision@example.test')
+        ->set('role', Role::Member->value)
+        ->call('createUser')
+        ->assertHasNoErrors();
+
+    $user = User::query()->where('email', 'collision@example.test')->firstOrFail();
+
+    expect($user->handle)->toMatch('/^[a-z0-9]{4,15}$/')
+        ->and($user->handle)->not->toBe('collision');
+});
+
+test('user routes bind and generate by handle', function () {
+    actingAs(User::factory()->create());
+    $user = User::factory()->create();
+
+    expect(route('users.show', $user))->toEndWith('/users/'.$user->handle);
+
+    get(route('users.show', $user))
+        ->assertOk()
+        ->assertSee($user->name);
+
+    get('/users/'.$user->id)->assertNotFound();
+});
+
 test('an admin can resend verification to an unverified user', function () {
     Notification::fake();
 

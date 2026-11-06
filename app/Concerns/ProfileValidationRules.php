@@ -20,6 +20,7 @@ trait ProfileValidationRules
     {
         return [
             'name' => $this->nameRules(),
+            'handle' => $this->handleRules($userId),
             'email' => $this->emailRules($userId),
         ];
     }
@@ -32,6 +33,26 @@ trait ProfileValidationRules
     protected function nameRules(): array
     {
         return ['required', 'string', 'max:255'];
+    }
+
+    /**
+     * Get the validation rules used to validate user handles.
+     *
+     * @return array<int, Unique|ValidationRule|array<mixed>|string>
+     */
+    protected function handleRules(?int $userId = null): array
+    {
+        return [
+            'required',
+            'string',
+            'lowercase',
+            'alpha_num',
+            'min:4',
+            'max:15',
+            $userId === null
+                ? Rule::unique(User::class, 'handle')
+                : Rule::unique(User::class, 'handle')->ignore($userId),
+        ];
     }
 
     /**

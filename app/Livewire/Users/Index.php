@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Notifications\VerifyEmailForNewUser;
 use Flux\Flux;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -65,6 +66,9 @@ class Index extends Component
      */
     public string $sortDirection = 'desc';
 
+    /**
+     * Create a new user and send a verification email.
+     */
     public function createUser(): void
     {
         $actor = Auth::user();
@@ -83,7 +87,7 @@ class Index extends Component
 
         abort_if($role->isOwner() && ! $actor->role->isOwner(), 403);
 
-        $user = User::create([
+        $user = $this->createUserRecord([
             'name' => $validated['name'],
             'email' => Str::lower($validated['email']),
             'role' => $role,
@@ -99,9 +103,31 @@ class Index extends Component
         Flux::toast(variant: 'success', text: __('User created. A verification email has been sent.'));
     }
 
-    public function confirmDelete(User $user): void
+    /**
+     * Create a user and retry when a generated handle loses a race.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    private function createUserRecord(array $attributes): User
     {
-        $this->deletingUserId = $user->id;
+        for ($attempt = 0; $attempt < 3; $attempt++) {
+            try {
+                return User::create($attributes);
+            } catch (UniqueConstraintViolationException $exception) {
+                if ($attempt === 2) {
+                    throw $exception;
+                }
+
+                $attributes['handle'] = User::generateHandle(Str::random(8));
+            }
+        }
+
+        throw new \RuntimeException('Unable to create user.');
+    }
+
+    public function confirmDelete(int $userId): void
+    {
+        $this->deletingUserId = $userId;
         $this->showDeleteModal = true;
     }
 
@@ -117,13 +143,18 @@ class Index extends Component
         $this->reset('showBatchDeleteModal');
     }
 
-    public function openEdit(User $user): void
+    public function openEdit(int $userId): void
     {
-        $this->dispatch('edit-user', userId: $user->id);
+        $this->dispatch('edit-user', userId: $userId);
     }
 
-    public function resendVerification(User $user): void
+    /**
+     * Resend the verification email to the given user.
+     */
+    public function resendVerification(int $userId): void
     {
+        $user = User::findOrFail($userId);
+
         $actor = Auth::user();
 
         abort_unless($actor instanceof User && $actor->role->canManageUsers(), 403);
@@ -138,20 +169,23 @@ class Index extends Component
         );
     }
 
-    public function confirmPromote(User $user): void
+    public function confirmPromote(int $userId): void
     {
-        $this->roleChangeUserId = $user->id;
+        $this->roleChangeUserId = $userId;
         $this->roleChangeTo = Role::Admin->value;
         $this->showRoleModal = true;
     }
 
-    public function confirmDemote(User $user): void
+    public function confirmDemote(int $userId): void
     {
-        $this->roleChangeUserId = $user->id;
+        $this->roleChangeUserId = $userId;
         $this->roleChangeTo = Role::Member->value;
         $this->showRoleModal = true;
     }
 
+    /**
+     * Apply the confirmed role change.
+     */
     public function changeRoleConfirmed(ChangeUserRole $changeUserRole): void
     {
         $user = $this->roleChangeUser();
@@ -200,19 +234,27 @@ class Index extends Component
         Flux::toast(variant: 'success', text: __('User demoted to Member.'));
     }
 
+    /**
+     * Delete the user awaiting confirmation.
+     */
     public function deleteConfirmed(): void
     {
         $user = $this->deletingUser();
 
         abort_if($user === null, 404);
 
-        $this->deleteUser($user);
+        $this->deleteUser($user->id);
 
         $this->reset('showDeleteModal', 'deletingUserId');
     }
 
-    public function deleteUser(User $user): void
+    /**
+     * Delete the given user.
+     */
+    public function deleteUser(int $userId): void
     {
+        $user = User::findOrFail($userId);
+
         $actor = Auth::user();
 
         abort_unless($actor instanceof User && $actor->role->canManageUsers(), 403);
@@ -298,6 +340,9 @@ class Index extends Component
         $this->resetPage();
     }
 
+    /**
+     * Delete the selected users.
+     */
     public function deleteSelected(): void
     {
         $actor = Auth::user();

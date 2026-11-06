@@ -33,16 +33,19 @@ class UserSeeder extends Seeder
     {
         User::factory()->create([
             'email' => 'owner@example.com',
+            'handle' => 'owner',
             'role' => Role::Owner,
         ]);
 
         User::factory()->create([
             'email' => 'admin@example.com',
+            'handle' => 'admin',
             'role' => Role::Admin,
         ]);
 
         User::factory(3)->state(new Sequence(fn (Sequence $sequence) => [
             'email' => \sprintf('member-%d@example.com', $sequence->index + 1),
+            'handle' => \sprintf('member%d', $sequence->index + 1),
         ]))->create(['role' => Role::Member]);
     }
 
@@ -51,6 +54,7 @@ class UserSeeder extends Seeder
         (new User)->forceFill([
             'name' => \sprintf('%s Owner', config('app.name')),
             'email' => 'owner@example.com',
+            'handle' => 'owner',
             'role' => Role::Owner,
             'email_verified_at' => now(),
             'password' => Hash::make('password'),

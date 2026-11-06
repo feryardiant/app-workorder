@@ -21,6 +21,13 @@
                 </flux:field>
 
                 <flux:field>
+                    <flux:label>{{ __('Handle') }}</flux:label>
+                    <flux:input wire:model="handle" type="text" required autocomplete="username" />
+                    <flux:description>{{ __('4-15 lowercase letters and numbers.') }}</flux:description>
+                    <flux:error name="handle" />
+                </flux:field>
+
+                <flux:field>
                     <flux:label>{{ __('Email') }}</flux:label>
                     <flux:input wire:model="email" type="email" required autocomplete="email" />
                     <flux:error name="email" />
