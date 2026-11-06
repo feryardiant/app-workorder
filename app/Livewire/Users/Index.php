@@ -99,9 +99,9 @@ class Index extends Component
         Flux::toast(variant: 'success', text: __('User created. A verification email has been sent.'));
     }
 
-    public function confirmDelete(User $user): void
+    public function confirmDelete(int $userId): void
     {
-        $this->deletingUserId = $user->id;
+        $this->deletingUserId = $userId;
         $this->showDeleteModal = true;
     }
 
@@ -117,13 +117,15 @@ class Index extends Component
         $this->reset('showBatchDeleteModal');
     }
 
-    public function openEdit(User $user): void
+    public function openEdit(int $userId): void
     {
-        $this->dispatch('edit-user', userId: $user->id);
+        $this->dispatch('edit-user', userId: $userId);
     }
 
-    public function resendVerification(User $user): void
+    public function resendVerification(int $userId): void
     {
+        $user = User::findOrFail($userId);
+
         $actor = Auth::user();
 
         abort_unless($actor instanceof User && $actor->role->canManageUsers(), 403);
@@ -138,16 +140,16 @@ class Index extends Component
         );
     }
 
-    public function confirmPromote(User $user): void
+    public function confirmPromote(int $userId): void
     {
-        $this->roleChangeUserId = $user->id;
+        $this->roleChangeUserId = $userId;
         $this->roleChangeTo = Role::Admin->value;
         $this->showRoleModal = true;
     }
 
-    public function confirmDemote(User $user): void
+    public function confirmDemote(int $userId): void
     {
-        $this->roleChangeUserId = $user->id;
+        $this->roleChangeUserId = $userId;
         $this->roleChangeTo = Role::Member->value;
         $this->showRoleModal = true;
     }
@@ -206,13 +208,15 @@ class Index extends Component
 
         abort_if($user === null, 404);
 
-        $this->deleteUser($user);
+        $this->deleteUser($user->id);
 
         $this->reset('showDeleteModal', 'deletingUserId');
     }
 
-    public function deleteUser(User $user): void
+    public function deleteUser(int $userId): void
     {
+        $user = User::findOrFail($userId);
+
         $actor = Auth::user();
 
         abort_unless($actor instanceof User && $actor->role->canManageUsers(), 403);

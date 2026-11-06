@@ -178,7 +178,7 @@
                         </flux:table.cell>
 
                         <flux:table.cell align="end" class="w-1/12 whitespace-nowrap">
-                            {{ $user->created_at?->translatedFormat('d M Y') ?? '—' }}
+                            <x-local-time :date="$user->created_at" />
                         </flux:table.cell>
 
                         <flux:table.cell align="center" class="w-1/12">

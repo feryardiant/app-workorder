@@ -24,6 +24,8 @@ class Edit extends Component
 
     public string $name = '';
 
+    public string $handle = '';
+
     public string $email = '';
 
     public function mount(?User $user = null): void
@@ -56,6 +58,7 @@ class Edit extends Component
 
         $this->user->fill([
             'name' => $validated['name'],
+            'handle' => $validated['handle'],
             'email' => Str::lower($validated['email']),
         ]);
 
@@ -89,6 +92,7 @@ class Edit extends Component
     {
         $this->user = $user;
         $this->name = $user->name;
+        $this->handle = $user->handle;
         $this->email = $user->email;
     }
 

@@ -201,7 +201,7 @@ it('reveals notification selection on hover on desktop', function () {
 it('switches to light mode and remembers it after navigation', function () {
     $member = User::factory()->withRole(Role::Member)->create();
 
-    $page = browserLogin($member)->navigate('/settings/appearance');
+    $page = browserLogin($member)->navigate('/settings/preferences');
 
     $page->click('Terang')
         ->wait(0.5)

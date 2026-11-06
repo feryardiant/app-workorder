@@ -20,6 +20,8 @@ class Profile extends Component
 
     public string $name = '';
 
+    public string $handle = '';
+
     public string $email = '';
 
     /**
@@ -28,6 +30,7 @@ class Profile extends Component
     public function mount(): void
     {
         $this->name = Auth::user()->name;
+        $this->handle = Auth::user()->handle;
         $this->email = Auth::user()->email;
     }
 

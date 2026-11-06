@@ -10,7 +10,7 @@
             </flux:heading>
 
             <flux:subheading class="flex flex-wrap items-center gap-2">
-                <span>{{ $user->created_at?->translatedFormat('d M Y') ?? '—' }}</span>
+                <span><x-local-time :date="$user->created_at" /></span>
                 <span>|</span>
                 <span>{{ $user->email }}</span>
 
@@ -76,7 +76,7 @@
 
         <div>
             <flux:text>{{ __('Registered at') }}</flux:text>
-            <flux:heading>{{ $user->created_at?->translatedFormat('d M Y') ?? '—' }}</flux:heading>
+            <flux:heading><x-local-time :date="$user->created_at" /></flux:heading>
         </div>
     </flux:card>
 

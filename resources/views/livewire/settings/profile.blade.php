@@ -7,6 +7,15 @@
         <form wire:submit="updateProfileInformation" class="my-6 w-full space-y-6">
             <flux:input wire:model="name" :label="__('Name')" type="text" required autofocus autocomplete="name" />
 
+            <flux:input
+                wire:model="handle"
+                :label="__('Handle')"
+                :description="__('4-15 lowercase letters and numbers.')"
+                type="text"
+                required
+                autocomplete="username"
+            />
+
             <div>
                 <flux:input wire:model="email" :label="__('Email')" type="email" required autocomplete="email" />
 

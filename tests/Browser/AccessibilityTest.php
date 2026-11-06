@@ -69,7 +69,7 @@ it('has no serious accessibility issues on the user detail page', function () {
     $member = User::factory()->create();
 
     browserLogin($owner)
-        ->navigate("/users/{$member->id}")
+        ->navigate("/users/{$member->handle}")
         ->assertNoAccessibilityIssues()
         ->assertNoJavaScriptErrors();
 });
