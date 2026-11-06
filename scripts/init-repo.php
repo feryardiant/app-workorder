@@ -157,7 +157,7 @@ function rewriteTemplateReferences(string $root, string $target): array
             return;
         }
 
-        $replaced = str_replace(TEMPLATE_PACKAGE, $target, $content);
+        $replaced = str_replace(TEMPLATE_PACKAGE, mb_strtolower($target, 'UTF-8'), $content);
 
         if ($replaced !== $content) {
             file_put_contents($root.'/'.$relative, $replaced);
