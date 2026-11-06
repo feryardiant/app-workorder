@@ -62,14 +62,18 @@
             "phpstan analyse"
         ],
         "test": [
-            "@php artisan config:clear --ansi",
             "@lint",
             "@check",
-            "@php artisan test"
+            "@test:feature",
+            "@test:browser"
+        ],
+        "test:feature": [
+            "@php artisan config:clear --ansi @no_additional_args",
+            "@php artisan test tests/Feature @additional_args"
         ],
         "test:browser": [
-            "@php artisan config:clear --ansi",
-            "@php artisan test tests/Browser"
+            "@php artisan config:clear --ansi @no_additional_args",
+            "@php artisan test tests/Browser @additional_args"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",

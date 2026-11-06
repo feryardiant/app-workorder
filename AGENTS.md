@@ -8,8 +8,9 @@ Laravel 13 / PHP 8.4 app. UI is Blade + Livewire 4 + Flux UI 2 + Tailwind 4; aut
 | --- | --- |
 | First-time setup | `composer setup`, then `npm ci` |
 | Dev (server, queue, logs, Vite) | `composer run dev` (same as `php artisan dev`); `php artisan dev:list` shows the processes |
-| Full gate | `composer test` — `config:clear` → Pint check → PHPStan → Pest (Unit, Feature) |
-| Browser (end-to-end) tests | `composer test:browser` — once per clone: `vpx playwright install chromium` |
+| Full gate | `composer test` — Pint check → PHPStan → Pest (Feature) → Pest (Browser) |
+| Feature tests | `composer test:feature` (also run by `composer test`) — clears config, then Pest on `tests/Feature`; forwards extra args |
+| Browser (end-to-end) tests | `composer test:browser` (also run by `composer test`) — once per clone: `vpx playwright install chromium` |
 | Backend format | `composer format`, or `vendor/bin/pint --dirty --format agent` for only changed files |
 | Backend static analysis | `composer check` (Larastan level 7: `app/`, `bootstrap/app.php`, `config/`, `database/`, `routes/`) |
 | Frontend lint/format/typecheck | `npm run lint` / `npm run format` (Vite+ `vp check`, type-aware) |
@@ -41,7 +42,7 @@ Laravel 13 / PHP 8.4 app. UI is Blade + Livewire 4 + Flux UI 2 + Tailwind 4; aut
 - CI (`.github/workflows/tests.yml`) uses PostgreSQL 18, builds with `vp build`, then runs Pint, PHPStan, `php artisan test`, and `composer test:browser`. The job installs only the headless Chromium shell (`--only-shell`). Framework tables (`cache`, `jobs`, `sessions`) live in a separate `system` schema; `create_system_schema` is PostgreSQL-only and skips itself on other drivers. Keep migrations portable.
 - `phpunit.xml` deliberately leaves the DB env vars commented, so tests use the `.env.testing` (or `.env`) connection: a local `php artisan test` runs against PostgreSQL and `RefreshDatabase` wipes that database. Never point tests at data you need.
 - Every Feature and Browser test automatically uses `RefreshDatabase` (`tests/Pest.php`). Fortify feature tests use `$this->skipUnlessFortifyHas(...)` from `tests/TestCase.php` instead of asserting on disabled features.
-- Browser tests live in `tests/Browser` (Pest Browser + Playwright) and are excluded from `composer test`; run them with `composer test:browser`. Use the shared `browserLogin()` helper in `tests/Pest.php`. They need built assets (`npm run build`) and Chromium (`vpx playwright install chromium`); CI installs only the headless shell, so use the full install locally for headed debugging. Assert the Indonesian UI text because `APP_LOCALE=id`, and run `php artisan optimize:clear` when Livewire assets 404 on a stale cache.
+- Browser tests live in `tests/Browser` (Pest Browser + Playwright) and also run as part of `composer test`; run them alone with `composer test:browser`. Use the shared `browserLogin()` helper in `tests/Pest.php`. They need built assets (`npm run build`) and Chromium (`vpx playwright install chromium`); CI installs only the headless shell, so use the full install locally for headed debugging. Assert the Indonesian UI text because `APP_LOCALE=id`, and run `php artisan optimize:clear` when Livewire assets 404 on a stale cache.
 - Add a feature test for behavior changes instead of writing a verification script or tinker snippet; reserve browser tests for critical end-to-end paths (auth, main flows, accessibility, mobile usability).
 
 ## Boost MCP
