@@ -64,8 +64,24 @@ test('notifications use the recipients preferred locale', function () {
         ->and($html)->not->toContain('telah berubah');
 });
 
-test('preferred locale is null when the user has no locale preference', function () {
-    expect(User::factory()->create(['locale' => null])->preferredLocale())->toBeNull();
+test('preferred locale falls back to the app default locale', function () {
+    expect(User::factory()->create(['locale' => null])->preferredLocale())
+        ->toBe((string) config('app.default_locale'));
+});
+
+test('notifications fall back to the app default locale', function () {
+    Mail::fake();
+
+    $recipient = User::factory()->create(['locale' => null]);
+    $actor = User::factory()->create();
+
+    app()->setLocale(Locale::English->value);
+
+    $recipient->notify(new UserRoleChangedNotification($actor, Role::Admin));
+
+    $data = $recipient->notifications()->firstOrFail()->data;
+
+    expect($data['title'])->toBe(__('Your role at :app has changed', ['app' => config('app.name')], 'id'));
 });
 
 test('dates are displayed in the users timezone while stored in UTC', function () {
