@@ -1,6 +1,6 @@
 {
     "$schema": "https://www.schemastore.org/package.json",
-    "name": "laravel-template",
+    "name": "@feryardiant/laravel-template",
     "version": "0.0.0",
     "private": true,
     "type": "module",
