@@ -1,0 +1,73 @@
+name: laravel-template
+
+# Local stand-in for the staging server: runs the real staging image (built by
+# `app`, pulled as-is by `schedule` and `queue`) with the same service layout, so
+# it can be smoke-tested before deploying. Only the convenience bits differ from
+# production: published ports and host-mounted `storage/app`. `app` migrates and
+# seeds on boot, the workers do not.
+services:
+  app:
+    extends:
+      file: scripts/docker/compose.yaml
+      service: app
+    build:
+      context: .
+      dockerfile: scripts/docker/staging/Dockerfile
+    image: ghcr.io/feryardiant/laravel-template:staging
+    environment: &environment
+      APP_DEBUG: false
+      APP_ENV: staging
+      LOG_LEVEL: info
+      DB_HOST: pgsql
+      MAIL_HOST: mailpit
+    ports:
+      - ${APP_PORT:-8080}:8080
+    volumes:
+      - ./storage/app:/var/www/html/storage/app
+
+  schedule:
+    extends:
+      file: scripts/docker/compose.yaml
+      service: worker
+    command: [./artisan, schedule:work, --whisper]
+    environment: *environment
+    volumes:
+      - ./storage/app:/var/www/html/storage/app
+    healthcheck:
+      test: [CMD, healthcheck-schedule]
+
+  queue:
+    extends:
+      file: scripts/docker/compose.yaml
+      service: worker
+    command: [./artisan, queue:work, --tries=3, --sleep=3, --timeout=60]
+    environment: *environment
+    volumes:
+      - ./storage/app:/var/www/html/storage/app
+    healthcheck:
+      test: [CMD, healthcheck-queue]
+
+  pgsql:
+    extends:
+      file: scripts/docker/compose.yaml
+      service: pgsql
+    ports:
+      - ${FORWARD_DB_PORT:-5432}:5432
+
+  mailpit:
+    extends:
+      file: scripts/docker/compose.yaml
+      service: mailpit
+    ports:
+      - ${FORWARD_MAILPIT_APP_PORT:-8025}:8025
+      - ${FORWARD_MAILPIT_MAIL_PORT:-1025}:1025
+
+networks:
+  default:
+    enable_ipv6: false
+
+volumes:
+  mailpit-data:
+    driver: local
+  pgsql-data:
+    driver: local
