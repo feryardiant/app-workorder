@@ -310,7 +310,7 @@ describe('verifyTransformation', function () use (&$root) {
     });
 });
 
-describe('bootstrapProject', function () use (&$root) {
+describe('bootstrapProject', function () use (&$root, $makeFixture) {
     $installScript = function () use (&$root): void {
         copy(\dirname(__DIR__).'/scripts/init-repo.php', $root.'/scripts/init-repo.php');
     };
@@ -348,6 +348,21 @@ describe('bootstrapProject', function () use (&$root) {
 
         expect(file_exists($root.'/composer.lock'))->toBe(! isCommandAvailable('composer'));
         expect(file_exists($root.'/package-lock.json'))->toBe(! isCommandAvailable('npm'));
+    });
+
+    it('accepts mixed-case and template-derived repository names', function () use (&$root, $makeFixture) {
+        foreach (['fery/my-app', 'OctoCat/Hello-World', 'feryardiant/laravel-template-new'] as $target) {
+            $root = $makeFixture();
+            copy(\dirname(__DIR__).'/scripts/init-repo.php', $root.'/scripts/init-repo.php');
+
+            $out = fopen('php://memory', 'r+');
+            $code = bootstrapProject($root, $out, ['GITHUB_REPOSITORY' => $target]);
+            rewind($out);
+            $output = (string) stream_get_contents($out);
+            fclose($out);
+
+            expect($code)->toBe(0, 'bootstrap failed for '.$target.":\n".$output);
+        }
     });
 
     it('fails before touching the tree when GITHUB_REPOSITORY is missing', function () use (&$root, $installScript) {

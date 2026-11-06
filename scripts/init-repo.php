@@ -33,13 +33,16 @@ const REMOVAL_TARGET = [
  */
 function bootstrapProject(string $root, $stdout, array $env): int
 {
-    $target = $env['GITHUB_REPOSITORY'] ?? null;
+    $repository = $env['GITHUB_REPOSITORY'] ?? null;
 
-    if (! \is_string($target) || $target === '') {
+    if (! \is_string($repository) || $repository === '') {
         fwrite($stdout, 'FAIL: GITHUB_REPOSITORY is not set'.PHP_EOL);
 
         return 1;
     }
+
+    // Composer package names are always lowercase.
+    $target = mb_strtolower($repository, 'UTF-8');
 
     rewriteTemplateReferences($root, $target);
     resetPackageVersions($root);
@@ -157,7 +160,7 @@ function rewriteTemplateReferences(string $root, string $target): array
             return;
         }
 
-        $replaced = str_replace(TEMPLATE_PACKAGE, mb_strtolower($target, 'UTF-8'), $content);
+        $replaced = str_replace(TEMPLATE_PACKAGE, $target, $content);
 
         if ($replaced !== $content) {
             file_put_contents($root.'/'.$relative, $replaced);
@@ -332,8 +335,9 @@ function verifyTransformation(string $root, string $target): array
     walkTemplateFiles($root, function (
         string $relative,
         string $content
-    ) use (&$failures): void {
-        if (str_contains($content, TEMPLATE_PACKAGE)) {
+    ) use (&$failures, $target): void {
+        // Mask the replacement so a target named after the template still passes.
+        if (str_contains(str_replace($target, '', $content), TEMPLATE_PACKAGE)) {
             $failures[] = 'residual template reference in '.$relative;
         }
     });
