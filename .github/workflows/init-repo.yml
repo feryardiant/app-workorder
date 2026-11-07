@@ -1,0 +1,70 @@
+name: Init Repo
+run-name: 'chore(${{ github.ref_name }}): init `${{ github.repository }}` repo'
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  init:
+    name: Initialize
+    if: >-
+      github.event.repository.is_template == false &&
+      (github.event.created == true || github.event.before == '0000000000000000000000000000000000000000')
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    env:
+      COLUMN: 120
+      PHP_VERSION: ${{ vars.PHP_VERSION || '8.4' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          coverage: xdebug
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --ansi
+
+      - name: Bootstrap project
+        run: php scripts/init-repo.php
+
+      - name: Regenerate lock files
+        run: |
+          set -euo pipefail
+          composer update --ansi --prefer-dist --no-interaction --no-progress
+          if command -v npm >/dev/null; then
+            npm install --no-audit --no-fund
+          fi
+
+      - name: Verify changes
+        run: |
+          set -euo pipefail
+
+          # Verify generated locks
+          test -e composer.lock
+          if command -v npm >/dev/null; then
+            test -e package-lock.json
+          fi
+
+          # Verify bootstrap cleanups
+          test ! -e scripts/init-repo.php
+
+      - name: Amend initial commit
+        env:
+          CI_BOT_USERNAME: ${{ vars.CI_BOT_USERNAME || 'github-actions[bot]' }}
+          CI_BOT_EMAIL: ${{ vars.CI_BOT_EMAIL || '41898282+github-actions[bot]@users.noreply.github.com' }}
+        run: |
+          set -euo pipefail
+          git config user.name "$CI_BOT_USERNAME"
+          git config user.email "$CI_BOT_EMAIL"
+          git add -A
+          git commit --amend --no-verify -m 'chore: initial commit :fire:'
+          git push --force-with-lease origin HEAD:main
