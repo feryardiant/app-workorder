@@ -269,6 +269,14 @@ describe('verifyTransformation', function () use (&$root) {
             ->toContain('residual template reference in README.md');
     });
 
+    it('reports residual template references when the target is a prefix', function () use (&$root, $transform) {
+        $transform($root, 'feryardiant/laravel');
+        file_put_contents($root.'/README.md', "badge feryardiant/laravel-template badge\n");
+
+        expect(verifyTransformation($root, 'feryardiant/laravel'))
+            ->toContain('residual template reference in README.md');
+    });
+
     it('reports unreset versions', function () use (&$root, $transform) {
         $transform($root, 'fery/my-app');
         file_put_contents($root.'/package.json', "{\n    \"version\": \"1.2.3\"\n}\n");
@@ -351,7 +359,7 @@ describe('bootstrapProject', function () use (&$root, $makeFixture) {
     });
 
     it('accepts mixed-case and template-derived repository names', function () use (&$root, $makeFixture) {
-        foreach (['fery/my-app', 'OctoCat/Hello-World', 'feryardiant/laravel-template-new'] as $target) {
+        foreach (['fery/my-app', 'OctoCat/Hello-World', 'feryardiant/laravel', 'feryardiant/laravel-template-new'] as $target) {
             $root = $makeFixture();
             copy(\dirname(__DIR__).'/scripts/init-repo.php', $root.'/scripts/init-repo.php');
 

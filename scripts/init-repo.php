@@ -336,8 +336,13 @@ function verifyTransformation(string $root, string $target): array
         string $relative,
         string $content
     ) use (&$failures, $target): void {
-        // Mask the replacement so a target named after the template still passes.
-        if (str_contains(str_replace($target, '', $content), TEMPLATE_PACKAGE)) {
+        // Mask only when the replacement itself contains the template name,
+        // otherwise a prefix target would hide a residual reference.
+        $scan = str_contains($target, TEMPLATE_PACKAGE)
+            ? str_replace($target, '', $content)
+            : $content;
+
+        if (str_contains($scan, TEMPLATE_PACKAGE)) {
             $failures[] = 'residual template reference in '.$relative;
         }
     });
