@@ -48,7 +48,6 @@ Laravel 13 / PHP 8.4 app. UI is Blade + Livewire 4 + Flux UI 2 + Tailwind 4; aut
 ## Boost MCP
 
 - `opencode.json` and `.zed/settings.json` start `php artisan boost:mcp`. Prefer Boost tools over shell or manual guesses: `search-docs` for Laravel/Livewire/Flux APIs, `database-query` for read-only SQL, `database-schema` before schema changes, `browser-logs` for frontend errors, and `get-absolute-url` before sharing a URL.
-- Read the matching skill in `.agents/skills/` before framework work: `livewire-development`, `fluxui-development`, `fortify-development`, `tailwindcss-development`, `laravel-best-practices`, or `testing-best-practices`.
 
 ## Localization
 
@@ -60,6 +59,7 @@ Laravel 13 / PHP 8.4 app. UI is Blade + Livewire 4 + Flux UI 2 + Tailwind 4; aut
 
 ## Conventions
 
+- Before starting any task, check `.agents/skills/` and read the skill whose description matches the work. That directory is gitignored, so it may be absent; never assume this file names every available skill.
 - Git hooks in `.vite-hooks/` run `vp staged` before commits (auto-formats staged files) and commitlint on the message; use Conventional Commits.
 - Clickable controls use `pointer` cursors and popover containers use `default` (base rules in `resources/css/app.css`). Put touch-only affordances behind `[@media(hover:none)]`; `->on()->mobile()` emulates `hover: none` and `pointer: coarse`.
 - Do not add dependencies without approval.
